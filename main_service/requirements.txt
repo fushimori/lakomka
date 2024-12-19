@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+jinja2
+httpx
+pika
+python-multipart
+uuid

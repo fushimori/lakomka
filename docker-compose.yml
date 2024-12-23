@@ -1,16 +1,4 @@
-version: "3.7"
 services:
-  auth_service:
-    build: ./auth_service
-    ports:
-      - "8001:8001"
-    depends_on:
-      - rabbitmq
-    volumes:
-      - ./auth_service/app:/app
-    networks:
-      - mynetwork
-
   main_service:
     build: ./main_service
     ports:
@@ -22,17 +10,60 @@ services:
     networks:
       - mynetwork
 
+  auth_service:
+    build: ./auth_service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./auth_service/app:/app
+    networks:
+      - mynetwork
+
+  catalog_service:
+    build: ./catalog_service
+    ports:
+      - "8003:8003"  # Прокси порт с хостовой машины на контейнер
+    depends_on:
+      - catalog_db
+    environment:
+      - CATALOG_DB_USER=catalog_user
+      - CATALOG_DB_PASSWORD=catalog_pass
+      - CATALOG_DB_NAME=catalog_db
+      - CATALOG_DB_HOST=catalog_db  # Используем имя контейнера для подключения
+      - CATALOG_DB_PORT=5432  # Контейнерный порт базы данных
+    volumes:
+      - ./catalog_service/app:/app
+    networks:
+      - mynetwork
+
+  catalog_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_pass
+      POSTGRES_DB: catalog_db
+    ports:
+      - "5433:5432"  # Прокси порт для подключения к базе данных из хоста
+    volumes:
+      - catalog_db_data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
+
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672" # RabbitMQ connection
-      - "15672:15672" # RabbitMQ Management Console
+      - "5672:5672"  # RabbitMQ connection
+      - "15672:15672"  # RabbitMQ Management Console
     networks:
       - mynetwork
-
 
 networks:
   mynetwork:
     driver: bridge
+
+volumes:
+  catalog_db_data:  # Персистентный том для данных базы данных Catalog

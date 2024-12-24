@@ -1,4 +1,4 @@
-# catalog_service/app/db/models.py
+# cart_service/app/db/models.py
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from db.database import Base

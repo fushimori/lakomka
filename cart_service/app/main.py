@@ -1,4 +1,4 @@
-# catalog_service/app/main.py
+# cart_service/app/main.py
 
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession

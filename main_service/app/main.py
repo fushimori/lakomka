@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import pika
 import uuid
 import json
 import time
+import jwt
 import httpx
 
 app = FastAPI()
@@ -25,6 +26,19 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 AUTH_SERVICE_URL = "http://auth_service:8000"
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+
+
+def decode_jwt(token: str) -> str:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        return username
+    except jwt.ExpiredSignatureError:
+        raise Exception("Token has expired")
+    except jwt.InvalidTokenError:
+        raise Exception("Invalid token")
 
 
 def connection_rabbit():
@@ -83,7 +97,19 @@ def send_request_and_wait_for_response(message):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # user_data = request.cookies.get("user_data")
+    # if user_data:
+    #     user = json.loads(user_data)
+    #     username = user.get("username", "Unknown User")
+    # else:
+    #     username = None
+    jwt_token = request.cookies.get("access_token")
+    if jwt_token:
+        username = decode_jwt(jwt_token)
+    else:
+        username = None
+    print("DEBUG: main_service check cookies: username - ", username)
+    return templates.TemplateResponse("index.html", {"request": request, "username": username})
 
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
@@ -129,4 +155,22 @@ async def login_action(username: str = Form(...), password: str = Form(...)):
     print("DEBUG: main_service in post login")
     message = {"event": "login_request", "username": username, "password": password}
     response = send_request_and_wait_for_response(message)
+    if response.get("status") == "success":
+        token = response.get("token")
+        # user = response.get("user")
+        # response = HTMLResponse(content="Login successful! Redirecting...", status_code=200)
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(key="access_token", value=token, httponly=True, secure=True)
+        # response.set_cookie(key="user_data", value=json.dumps(user), httponly=True, secure=True)
+        return response
+    else:
+        return response
+
+@app.post("/logout")
+async def logout(response: Response):
+    """Удаление токена и данных пользователя."""
+    # response = HTMLResponse(content="Logged out successfully!", status_code=200)
+    response = RedirectResponse(url="/", status_code=303)
+    response.delete_cookie("access_token")
+    response.delete_cookie("user_data")
     return response

@@ -1,0 +1,86 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from fastapi import HTTPException
+from db.models import Cart, CartItem
+from sqlalchemy.orm import joinedload
+
+# Получение корзины по ID пользователя
+async def get_cart_by_user_id(db: AsyncSession, user_id: int):
+    result = await db.execute(select(Cart).filter(Cart.user_id == user_id).options(joinedload(Cart.items)))
+    return result.scalar_one_or_none()
+
+# Добавление товара в корзину
+async def add_product_to_cart(db: AsyncSession, user_id: int, product_id: int, quantity: int):
+    # Проверим, есть ли корзина для данного пользователя
+    cart = await get_cart_by_user_id(db, user_id)
+    if not cart:
+        # Если корзины нет, создадим новую
+        cart = Cart(user_id=user_id)
+        db.add(cart)
+        await db.commit()
+        await db.refresh(cart)
+
+    # Проверим, есть ли уже товар в корзине
+    cart_item = await db.execute(select(CartItem).filter(CartItem.product_id == product_id, CartItem.cart_id == cart.id))
+    cart_item = cart_item.scalar_one_or_none()
+
+    if cart_item:
+        # Если товар уже есть в корзине, обновим его количество
+        cart_item.quantity += quantity
+    else:
+        # Если товара нет в корзине, добавим новый элемент
+        new_item = CartItem(product_id=product_id, quantity=quantity, cart_id=cart.id)
+        db.add(new_item)
+    
+    await db.commit()
+    return cart
+
+# Удаление товара из корзины
+async def remove_product_from_cart(db: AsyncSession, user_id: int, product_id: int):
+    # Получаем корзину пользователя
+    cart = await get_cart_by_user_id(db, user_id)
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    # Ищем товар в корзине
+    cart_item = await db.execute(select(CartItem).filter(CartItem.product_id == product_id, CartItem.cart_id == cart.id))
+    cart_item = cart_item.scalar_one_or_none()
+
+    if not cart_item:
+        raise HTTPException(status_code=404, detail="Product not found in the cart")
+
+    # Удаляем товар
+    await db.delete(cart_item)
+    await db.commit()
+    return cart
+
+# Обновление количества товара в корзине
+async def update_product_quantity_in_cart(db: AsyncSession, user_id: int, product_id: int, quantity: int):
+    if quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than zero.")
+
+    # Получаем корзину пользователя
+    cart = await get_cart_by_user_id(db, user_id)
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    # Ищем товар в корзине
+    cart_item = await db.execute(select(CartItem).filter(CartItem.product_id == product_id, CartItem.cart_id == cart.id))
+    cart_item = cart_item.scalar_one_or_none()
+
+    if not cart_item:
+        raise HTTPException(status_code=404, detail="Product not found in the cart")
+
+    # Обновляем количество
+    cart_item.quantity = quantity
+    await db.commit()
+    return cart
+
+# Получение всех товаров в корзине
+async def get_all_cart_items(db: AsyncSession, user_id: int):
+    cart = await get_cart_by_user_id(db, user_id)
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    # Возвращаем список товаров в корзине
+    return cart.items

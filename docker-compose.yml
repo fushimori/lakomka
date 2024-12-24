@@ -24,7 +24,7 @@ services:
   catalog_service:
     build: ./catalog_service
     ports:
-      - "8003:8003"  # Прокси порт с хостовой машины на контейнер
+      - "8003:8000"  # Прокси порт с хостовой машины на контейнер
     depends_on:
       - catalog_db
     environment:
@@ -35,6 +35,23 @@ services:
       - CATALOG_DB_PORT=5432  # Контейнерный порт базы данных
     volumes:
       - ./catalog_service/app:/app
+    networks:
+      - mynetwork
+
+  cart_service:
+    build: ./cart_service
+    ports:
+      - "8004:8000"  # Прокси порт с хостовой машины на контейнер
+    depends_on:
+      - cart_db
+    environment:
+      - CART_DB_USER=cart_user
+      - CART_DB_PASSWORD=cart_pass
+      - CART_DB_NAME=cart_db
+      - CART_DB_HOST=cart_db  # Используем имя контейнера для подключения
+      - CART_DB_PORT=5432  # Контейнерный порт базы данных
+    volumes:
+      - ./cart_service/app:/app
     networks:
       - mynetwork
 
@@ -51,6 +68,18 @@ services:
     networks:
       - mynetwork
 
+  cart_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: cart_user
+      POSTGRES_PASSWORD: cart_pass
+      POSTGRES_DB: cart_db
+    ports:
+      - "5434:5432"  # Прокси порт для подключения к базе данных из хоста
+    volumes:
+      - cart_db_data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -67,3 +96,4 @@ networks:
 
 volumes:
   catalog_db_data:  # Персистентный том для данных базы данных Catalog
+  cart_db_data:

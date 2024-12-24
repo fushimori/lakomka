@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import pika
+from pika.exceptions import AMQPConnectionError
 import uuid
 import json
 import time
@@ -14,12 +15,12 @@ app = FastAPI()
 # RabbitMQ connection setup
 RABBITMQ_HOST = "rabbitmq"
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-channel = connection.channel()
+# connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+# channel = connection.channel()
 
 
 # Declare a queue
-channel.queue_declare(queue='user_events')
+# channel.queue_declare(queue='user_events')
 
 # Templates and static files
 templates = Jinja2Templates(directory="templates")
@@ -41,17 +42,21 @@ def decode_jwt(token: str) -> str:
         raise Exception("Invalid token")
 
 
-def connection_rabbit():
+def connection_rabbit():  # (?)
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
     channel = connection.channel()
     channel.queue_declare(queue='user_events')
+    return connection, channel
 
 TIMEOUT = 5  # Максимальное время ожидания ответа в секундах
 
 def send_request_and_wait_for_response(message):
     """Send a request to RabbitMQ and wait for a response with a timeout."""
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-    channel = connection.channel()
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+        channel = connection.channel()
+    except Exception as e:
+        return "RabbiMQ is no ready"
 
     # Declare a callback queue for the response
     result = channel.queue_declare(queue='', exclusive=True)

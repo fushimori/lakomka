@@ -37,3 +37,8 @@ async def update_cart_item_quantity(user_id: int, product_id: int, quantity: int
 async def remove_from_cart(user_id: int, product_id: int, db: AsyncSession = Depends(get_db)):
     cart = await remove_product_from_cart(db, user_id, product_id)
     return cart
+
+@app.get("/")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "cart_service running"}

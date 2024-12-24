@@ -24,7 +24,7 @@ services:
   catalog_service:
     build: ./catalog_service
     ports:
-      - "8003:8000"  # Прокси порт с хостовой машины на контейнер
+      - "8003:8003"  # Прокси порт с хостовой машины на контейнер
     depends_on:
       - catalog_db
     environment:
@@ -41,7 +41,7 @@ services:
   cart_service:
     build: ./cart_service
     ports:
-      - "8004:8000"  # Прокси порт с хостовой машины на контейнер
+      - "8004:8004"  # Прокси порт с хостовой машины на контейнер
     depends_on:
       - cart_db
     environment:

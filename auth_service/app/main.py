@@ -1,7 +1,7 @@
 import pika
 import json
 from fastapi import FastAPI, Request, Form
-from auth_utils import hash_password, verify_password
+from auth_utils import hash_password, verify_password, create_access_token
 from database import get_user, add_user
 import threading
 import time
@@ -71,9 +71,18 @@ def handle_login(message, reply_to, correlation_id):
         user = get_user(username)
         if user and verify_password(password, user["password"]):
             print("Debug: auth service here 1")
-            response = {"status": "success", "message": f"User {username} successfully logged in"}
+            token = create_access_token({"sub": username})
+            response = {
+                "status": "success",
+                "message": f"User {username} successfully logged in",
+                "token": token,
+                # "user": {
+                #     "username": user["username"]
+                # }
+            }
+            print("Debug: auth service handle_login 1: response: ", response)
         else:
-            print("Debug: auth service here 2")
+            print("Debug: auth service handle_login 2")
             response = {"status": "error", "message": "Invalid username or password"}
 
     send_response(reply_to, correlation_id, response)

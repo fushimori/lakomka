@@ -8,6 +8,13 @@
 </head>
 <body>
     <h1>Welcome to the Home Page</h1>
-    <a href="/login">Login</a> | <a href="/signup">Sign Up</a>
+     {% if username %}
+        <p>Hello, {{ username }}!</p>
+        <form action="/logout" method="post">
+                <button type="submit">Выйти</button>
+            </form>
+    {% else %}
+        <p>Please <a href="/login">login</a> or <a href="/signup">register</a>.</p>
+    {% endif %}
 </body>
 </html>

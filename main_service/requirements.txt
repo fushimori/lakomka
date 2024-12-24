@@ -5,3 +5,4 @@ httpx
 pika
 python-multipart
 uuid
+pyjwt==2.10.1

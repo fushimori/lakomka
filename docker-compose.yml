@@ -16,6 +16,13 @@ services:
       - "8001:8001"
     depends_on:
       - rabbitmq
+      - auth_db
+    environment:
+      - AUTH_DB_USER=auth_user
+      - AUTH_DB_PASSWORD=auth_pass
+      - AUTH_DB_NAME=auth_db
+      - AUTH_DB_HOST=auth_db  # Используем имя контейнера для подключения
+      - AUTH_DB_PORT=5432  # Контейнерный порт базы данных
     volumes:
       - ./auth_service/app:/app
     networks:
@@ -26,6 +33,7 @@ services:
     ports:
       - "8003:8003"  # Прокси порт с хостовой машины на контейнер
     depends_on:
+      - rabbitmq
       - catalog_db
     environment:
       - CATALOG_DB_USER=catalog_user
@@ -43,6 +51,7 @@ services:
     ports:
       - "8004:8004"  # Прокси порт с хостовой машины на контейнер
     depends_on:
+      - rabbitmq
       - cart_db
     environment:
       - CART_DB_USER=cart_user
@@ -60,6 +69,7 @@ services:
     ports:
       - "8005:8005"  # Прокси порт с хостовой машины на контейнер
     depends_on:
+      - rabbitmq
       - payment_db
     environment:
       - PAYMENT_DB_USER=payment_user
@@ -69,6 +79,19 @@ services:
       - PAYMENT_DB_PORT=5432  # Контейнерный порт базы данных
     volumes:
       - ./payment_service/app:/app
+    networks:
+      - mynetwork
+    
+  auth_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"  # Прокси порт для подключения к базе данных из хоста
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
     networks:
       - mynetwork
 
@@ -125,6 +148,7 @@ networks:
     driver: bridge
 
 volumes:
-  catalog_db_data:  # Персистентный том для данных базы данных Catalog
+  auth_db_data:
+  catalog_db_data: 
   cart_db_data:
   payment_db_data:

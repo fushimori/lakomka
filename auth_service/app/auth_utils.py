@@ -1,3 +1,4 @@
+# auth_service/app/auth_utils.py
 import hashlib
 import hmac
 from datetime import datetime, timedelta

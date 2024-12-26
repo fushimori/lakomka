@@ -1,3 +1,4 @@
+# main_service/app/main.py
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -19,7 +20,7 @@ RABBITMQ_HOST = "rabbitmq"
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-AUTH_SERVICE_URL = "http://auth_service:8000"
+AUTH_SERVICE_URL = "http://auth_service:8001"
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
 
@@ -27,8 +28,8 @@ ALGORITHM = "HS256"
 def decode_jwt(token: str) -> str:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        return username
+        email = payload.get("sub")
+        return email
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
@@ -100,14 +101,14 @@ async def read_home(request: Request):
     try:
         jwt_token = request.cookies.get("access_token")
         if jwt_token:
-            username = decode_jwt(jwt_token)
+            email = decode_jwt(jwt_token)
 
         else:
-            username = None
+            email = None
     except HTTPException as e:
         print(f"DEBUG main service: JWT error - {e.detail}")
-        username = None
-    print("DEBUG: main_service check cookies: username - ", username)
+        email = None
+    print("DEBUG: main_service check cookies: email - ", email)
 
     categories = [
         {"id": 1, "name": "Laptops"},
@@ -123,7 +124,54 @@ async def read_home(request: Request):
          "category_id": 2}
     ]
 
-    return templates.TemplateResponse("index.html", {"request": request, "username": username, "categories": categories, "products": products})
+    return templates.TemplateResponse("index.html", {"request": request, "email": email, "categories": categories, "products": products})
+
+@app.get("/profile", response_class=HTMLResponse)
+async def get_profile(request: Request):
+    """Рендерит профиль с данными, полученными через API."""
+    jwt_token = request.cookies.get("access_token")
+    
+    if not jwt_token:
+        print("DEBUG: No JWT token found in cookies")
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        # Декодируем payload
+        email = decode_jwt(jwt_token)
+        if not email:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token: email not found"
+            )
+        print(f"DEBUG: Decoded JWT token for email: {email}")
+    except HTTPException as e:
+        print(f"DEBUG: JWT decoding error: {e.detail}")
+        return RedirectResponse(url="/login", status_code=303)
+
+    profile_data = None  # Инициализация переменной
+
+    try:
+        async with httpx.AsyncClient() as client:
+            print(f"DEBUG: Sending request to auth_service for profile data with payload: {email}")
+            response = await client.get(
+                f"{AUTH_SERVICE_URL}/profile?email={email}",  # Переход на эндпоинт с email
+            )
+            response.raise_for_status()
+            profile_data = response.json()  # Присваиваем данные профиля
+            print(f"DEBUG: Received profile data from auth_service: {profile_data}")
+    except httpx.HTTPStatusError as e:
+        print(f"DEBUG: Error fetching profile from auth_service - Status: {e.response.status_code}, Body: {e.response.text}")
+        return RedirectResponse(url="/login", status_code=303)
+    except Exception as e:
+        print(f"DEBUG: Unexpected error fetching profile from auth_service: {str(e)}")
+        return RedirectResponse(url="/", status_code=500)
+
+    if profile_data is None:
+        print("DEBUG: No profile data received, redirecting to login.")
+        return RedirectResponse(url="/login", status_code=303)
+    print("Profile data being passed to template:", profile_data)
+
+    return templates.TemplateResponse("profile.html", {"request": request, "profile": profile_data})
 
 
 @app.get("/login", response_class=HTMLResponse)

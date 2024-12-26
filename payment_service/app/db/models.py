@@ -26,6 +26,13 @@ class Transaction(Base):
 
     refunds = relationship("Refund", back_populates="transaction")
 
+# Модель для таблицы PaymentMethods
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    method_name = Column(String, unique=True, nullable=False)
+
 # Модель для таблицы Refunds
 class Refund(Base):
     __tablename__ = "refunds"

@@ -1,7 +1,9 @@
+# catalog_service / app / db / functions.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
-from db.models import Product
+from db.models import Product, Category
+from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas
 
 # Получение всех продуктов с пагинацией
 async def get_all_products(db: AsyncSession, skip: int = 0, limit: int = 100):
@@ -12,6 +14,17 @@ async def get_all_products(db: AsyncSession, skip: int = 0, limit: int = 100):
 async def get_product_by_id(db: AsyncSession, product_id: int):
     result = await db.execute(select(Product).filter(Product.id == product_id))
     return result.scalar_one_or_none()
+
+async def get_all_categories(db: AsyncSession):
+    result = await db.execute(select(Category))
+    categories = result.scalars().all()
+
+    # Преобразуем SQLAlchemy объекты в Pydantic модели
+    categories_list = [CategorySchemas.from_orm(category) for category in categories]
+
+    categories_dict = [category.dict() for category in categories_list]
+
+    return categories_dict
 
 # Создание нового товара
 async def create_product(db: AsyncSession, name: str, description: str, price: float, stock: int, category_id: int, seller_id: int):
@@ -37,11 +50,11 @@ async def update_product(db: AsyncSession, product_id: int, name: str, descripti
     product = await get_product_by_id(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     # Проверка на отрицательные значения для цены и количества
     if price < 0 or stock < 0:
         raise HTTPException(status_code=400, detail="Price and stock must be non-negative.")
-    
+
     # Обновление данных продукта
     product.name = name
     product.description = description

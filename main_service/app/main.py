@@ -30,9 +30,9 @@ def decode_jwt(token: str) -> str:
         username = payload.get("sub")
         return username
     except jwt.ExpiredSignatureError:
-        raise Exception("Token has expired")
+        raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
-        raise Exception("Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 TIMEOUT = 5  # Максимальное время ожидания ответа в секундах
@@ -97,13 +97,33 @@ async def send_request_and_wait_for_response(message):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_home(request: Request):
-    jwt_token = request.cookies.get("access_token")
-    if jwt_token:
-        username = decode_jwt(jwt_token)
-    else:
+    try:
+        jwt_token = request.cookies.get("access_token")
+        if jwt_token:
+            username = decode_jwt(jwt_token)
+
+        else:
+            username = None
+    except HTTPException as e:
+        print(f"DEBUG main service: JWT error - {e.detail}")
         username = None
     print("DEBUG: main_service check cookies: username - ", username)
-    return templates.TemplateResponse("index.html", {"request": request, "username": username})
+
+    categories = [
+        {"id": 1, "name": "Laptops"},
+        {"id": 2, "name": "Desktops"},
+        {"id": 3, "name": "Accessories"}
+    ]
+
+    products = [
+        {"id": 1, "name": "MacBook Pro 16\"", "price": 2499.99, "image": "/static/images/macbook.jpg",
+         "category_id": 1},
+        {"id": 2, "name": "Dell XPS 15", "price": 1899.99, "image": "/static/images/dell.jpg", "category_id": 1},
+        {"id": 3, "name": "Gaming Desktop", "price": 1499.99, "image": "/static/images/gaming_desktop.jpg",
+         "category_id": 2}
+    ]
+
+    return templates.TemplateResponse("index.html", {"request": request, "username": username, "categories": categories, "products": products})
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -139,7 +159,7 @@ async def login_action(email: str = Form(...), password: str = Form(...)):
         return response
 
 
-@app.post("/logout")
+@app.get("/logout")
 async def logout(response: Response):
     """Удаление токена и данных пользователя."""
     response = RedirectResponse(url="/", status_code=303)

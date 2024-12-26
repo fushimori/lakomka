@@ -17,8 +17,6 @@ RABBITMQ_HOST = "rabbitmq"
 
 # connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
 # channel = connection.channel()
-
-
 # Declare a queue
 # channel.queue_declare(queue='user_events')
 

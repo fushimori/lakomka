@@ -2,7 +2,7 @@ fastapi
 uvicorn
 jinja2
 httpx
-pika
+aio_pika
 python-multipart
 uuid
 pyjwt==2.10.1

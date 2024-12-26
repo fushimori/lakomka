@@ -1,115 +1,25 @@
-# auth_service/app/main.py
 import json
 import asyncio
-from fastapi import FastAPI, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.database import get_db
-from db.init_db import init_db
-from db.functions import create_user, get_user_by_email
+from fastapi import FastAPI
 from auth_utils import hash_password, verify_password, create_access_token
+from db.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from db.functions import create_user, get_user_by_email
+from db.init_db import init_db
 import aio_pika
 
-# RabbitMQ
+# RabbitMQ Host
 RABBITMQ_HOST = "rabbitmq"
 
-async def lifespan(app: FastAPI):
-    """Логика инициализации и завершения работы приложения."""
-    await init_db()  # Инициализация базы данных
-    yield
+# FastAPI Application
+app = FastAPI()
 
-app = FastAPI(lifespan=lifespan)
+# Application lifespan for initializing the database
+@app.on_event("startup")
+async def app_startup():
+    await init_db()
+    asyncio.create_task(consume_messages())
 
-async def consume_messages():
-    """Потребление сообщений из RabbitMQ."""
-    try:
-        connection = await aio_pika.connect_robust(f'amqp://guest:guest@{RABBITMQ_HOST}/')
-        async with connection:
-            channel = await connection.channel()
-            await channel.declare_queue("user_events", durable=True)
-            print("Waiting for messages...")
-
-            async def callback(message: aio_pika.IncomingMessage):
-                """Обработка входящих сообщений."""
-                async with message.process():
-                    try:
-                        body = message.body.decode()
-                        message_data = json.loads(body)
-                        await process_message(message_data, message.reply_to, message.correlation_id)
-                    except Exception as e:
-                        print(f"Error processing message: {e}")
-
-            queue = await channel.declare_queue("user_events", durable=True)
-            await queue.consume(callback)
-            await asyncio.Future()  # Пребывание в цикле событий
-
-    except aio_pika.exceptions.AMQPConnectionError:
-        print("RabbitMQ not ready. Retrying in 5 seconds...")
-        await asyncio.sleep(5)
-
-async def process_message(message, reply_to, correlation_id):
-    """Обработка входящего сообщения."""
-    event = message.get("event")
-    if event == "register_request":
-        await handle_registration(message, reply_to, correlation_id)
-    elif event == "login_request":
-        await handle_login(message, reply_to, correlation_id)
-
-async def handle_registration(message, reply_to, correlation_id, db: AsyncSession = Depends(get_db)):
-    """Обработка запроса на регистрацию."""
-    email = message.get("email")
-    password = message.get("password")
-    response = {}
-    if not email or not password:
-        response = {"status": "error", "message": "Invalid registration data"}
-    else:
-        # Проверяем, есть ли уже такой пользователь
-        existing_user = await get_user_by_email(db, email)
-        if existing_user:
-            response = {"status": "error", "message": f"User {email} already exists"}
-        else:
-            # Хешируем пароль и создаем нового пользователя
-            hashed_password = hash_password(password)
-            user_data = {"email": email, "hashed_password": hashed_password, "is_active": True}
-            new_user = await create_user(db, user_data)
-            response = {"status": "success", "message": f"User {new_user.email} successfully registered"}
-
-    # Отправляем ответ обратно в очередь RabbitMQ
-    await send_response(reply_to, correlation_id, response)
-
-async def handle_login(message, reply_to, correlation_id, db: AsyncSession = Depends(get_db)):
-    """Обработка запроса на вход в систему."""
-    email = message.get("email")
-    password = message.get("password")
-
-    response = {}
-    if not email or not password:
-        response = {"status": "error", "message": "Invalid login data"}
-    else:
-        user = await get_user_by_email(db, email)
-        if user and verify_password(password, user.hashed_password):
-            token = create_access_token({"sub": user.email})
-            response = {
-                "status": "success",
-                "message": f"User {user.email} successfully logged in",
-                "token": token,
-            }
-        else:
-            response = {"status": "error", "message": "Invalid email or password"}
-
-    await send_response(reply_to, correlation_id, response)
-
-async def send_response(reply_to, correlation_id, response):
-    """Отправка ответа в указанный queue."""
-    connection = await aio_pika.connect_robust(f'amqp://guest:guest@{RABBITMQ_HOST}/')
-    async with connection:
-        channel = await connection.channel()
-        await channel.default_exchange.publish(
-            aio_pika.Message(
-                body=json.dumps(response).encode(),
-                correlation_id=correlation_id
-            ),
-            routing_key=reply_to,
-        )
 
 @app.get("/")
 async def health_check():
@@ -120,7 +30,108 @@ async def start_consumer():
     """Запуск потребителя RabbitMQ."""
     await consume_messages()
 
-@app.on_event("startup")
-async def on_startup():
-    """Запуск асинхронного потребителя при старте приложения."""
-    asyncio.create_task(start_consumer())
+async def consume_messages():
+    """
+    Consume messages from RabbitMQ asynchronously.
+    This function continuously listens for messages from the 'user_events' queue.
+    """
+    while True:
+        try:
+            # Establish RabbitMQ connection
+            connection = await aio_pika.connect_robust(f"amqp://{RABBITMQ_HOST}")
+            async with connection:
+                channel = await connection.channel()
+                queue = await channel.declare_queue("user_events", durable=True)
+
+                # Consume messages from the queue
+                await queue.consume(lambda message: handle_message(channel, message))
+                print("Listening for messages...")
+                await asyncio.Future()  # Keep the consumer running
+        except aio_pika.exceptions.AMQPConnectionError:
+            print("RabbitMQ not available. Retrying in 5 seconds...")
+            await asyncio.sleep(5)
+
+
+async def handle_message(channel, message: aio_pika.IncomingMessage):
+    """Handle incoming messages from the RabbitMQ queue."""
+    async with message.process():
+        try:
+            payload = json.loads(message.body.decode())
+            async for db in get_db():  # Obtain a DB session
+                if payload["event"] == "register_request":
+                    response = await handle_registration(db, payload)
+                elif payload["event"] == "login_request":
+                    response = await handle_login(db, payload)
+                else:
+                    response = {"status": "error", "message": "Unknown event type"}
+
+                # Send response back to the reply queue
+                if message.reply_to:
+                    await send_response(channel, message.reply_to, message.correlation_id, response)
+        except Exception as e:
+            print(f"Error handling message: {e}")
+
+
+async def handle_registration(db: AsyncSession, payload: dict):
+    """Handle user registration."""
+    email = payload.get("email")
+    password = payload.get("password")
+
+    print("DEBUG: auth_service handle_registration email:", email, "password:", password)
+
+    if not email or not password:
+        return {"status": "error", "message": "Username and password are required"}
+    print("DEBUG: auth_service handle_registration 1")
+    existing_user = await get_user_by_email(db, email)
+    print("DEBUG: auth_service handle_registration 2", existing_user)
+    if existing_user:
+        return {"status": "error", "message": f"User {email} already exists"}
+
+    hashed_password = hash_password(password)
+    print("DEBUG: auth_service handle_registration 3")
+    # user_data = UserBase(email='www', hashed_password='...', is_active=True) доп вариант передачи ниже
+    new_user = await create_user(db, {"email": email, "hashed_password": hashed_password, "is_active": True})
+    print("DEBUG: auth_service handle_registration 4")
+    return {"status": "success", "message": f"User {email} successfully registered"}
+
+
+async def handle_login(db: AsyncSession, payload: dict):
+    """Handle user login."""
+    email = payload.get("email")
+    password = payload.get("password")
+    print("DEBUG: auth_service handle_login", email, password)
+
+    if not email or not password:
+        return {"status": "error", "message": "Username and password are required"}
+
+    user = await get_user_by_email(db, email)
+
+    print("DEBUG: auth_service handle_login user: ", user)
+    if user and verify_password(password, user.hashed_password):
+        token = create_access_token({"sub": email})
+        return {
+            "status": "success",
+            "message": "Login successful",
+            "token": token,
+        }
+    return {"status": "error", "message": "Invalid username or password"}
+
+
+async def send_response(channel, reply_to: str, correlation_id: str, response: dict):
+    """
+    Send a response message to the specified RabbitMQ queue.
+    :param channel: RabbitMQ channel
+    :param reply_to: Queue to send the response
+    :param correlation_id: ID for correlating request and response
+    :param response: Response message
+    """
+    try:
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(response).encode(),
+                correlation_id=correlation_id,
+            ),
+            routing_key=reply_to,
+        )
+    except Exception as e:
+        print(f"Error sending response: {e}")

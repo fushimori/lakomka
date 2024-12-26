@@ -21,13 +21,14 @@ async def get_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(select(User).filter(User.email == email))
     return result.scalar_one_or_none()
 
+
 # Функция для создания нового пользователя
-async def create_user(db: AsyncSession, user_data: UserBase):
+async def create_user(db: AsyncSession, user_data: dict): # user_data: UserBase
+    print("DEBUG: auth function create_user, user_data:", user_data)
     db_user = User(
-        email=user_data.email,
-        hashed_password=user_data.hashed_password,
-        is_active=user_data.is_active,
-        loyalty_card_number=user_data.loyalty_card_number
+        email=user_data['email'],
+        hashed_password=user_data['hashed_password'],
+        is_active=user_data['is_active']
     )
     db.add(db_user)
     await db.commit()

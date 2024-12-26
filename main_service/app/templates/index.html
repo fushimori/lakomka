@@ -1,20 +1,137 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Home</title>-->
+<!--    <link rel="stylesheet" href="/static/style.css">-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>Welcome to the Home Page</h1>-->
+<!--     {% if username %}-->
+<!--        <p>Hello, {{ username }}!</p>-->
+<!--        <form action="/logout" method="post">-->
+<!--                <button type="submit">Выйти</button>-->
+<!--            </form>-->
+<!--    {% else %}-->
+<!--        <p>Please <a href="/login">login</a> or <a href="/signup">register</a>.</p>-->
+<!--    {% endif %}-->
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Computer Shop</title>
+    <link rel="stylesheet" href="/static/index.css">
 </head>
 <body>
-    <h1>Welcome to the Home Page</h1>
-     {% if username %}
-        <p>Hello, {{ username }}!</p>
-        <form action="/logout" method="post">
-                <button type="submit">Выйти</button>
-            </form>
-    {% else %}
-        <p>Please <a href="/login">login</a> or <a href="/signup">register</a>.</p>
-    {% endif %}
+    <header>
+        <div>
+            <h1>Lakomka</h1>
+        </div>
+        <div>
+            {% if username %}
+            <a href="/profile/">{{ username }}</a>
+<!--            <form action="/logout" method="post">-->
+<!--                    <button type="submit">Выйти</button>-->
+<!--            </form>-->
+            <a href="/logout">Log out</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/signup">Sign up</a>
+            {% endif %}
+            <a href="/favorites">Favorites</a>
+            <a href="/cart">Cart</a>
+        </div>
+    </header>
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Search for products...">
+            <button onclick="searchProducts()">Search</button>
+        </div>
+        <div class="filters">
+            <label for="categories">Category:</label>
+            <select id="categories" onchange="filterProducts()">
+<!--                 <option value="">All</option>-->
+<!--                {% for category in categories %}-->
+<!--                    <option value="{{ category.id }}">{{ category.name }}</option>-->
+<!--                {% endfor %}-->
+            </select>
+        </div>
+        <div class="product-grid" id="productGrid">
+            {% for product in products %}
+                <div class="product">
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                    <h3>{{ product.name }}</h3>
+                    <p>${{ product.price }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Load categories and products from backend
+    loadCategories();
+    loadProducts();
+});
+
+async function loadCategories() {
+    try {
+        const response = await fetch('http://localhost:8003/api/categories');
+        const categories = await response.json();
+        const categoriesSelect = document.getElementById('categories');
+
+        // Adding categories to the dropdown list
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            categoriesSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load categories:', error);
+    }
+}
+
+async function loadProducts(categoryId = null) {
+    try {
+        // Construct the URL with the category filter if provided
+        const url = categoryId ? `http://localhost:8003/api/products?category=${categoryId}` : 'http://localhost:8003/api/products';
+        const response = await fetch(url);
+        const products = await response.json();
+        const productGrid = document.getElementById('productGrid');
+        productGrid.innerHTML = '';  // Clear the existing products
+
+        // Add products to the grid
+        products.forEach(product => {
+            const productElement = document.createElement('div');
+            productElement.className = 'product';
+
+            // Assuming each product has an 'image' property
+            productElement.innerHTML = `
+                <img src="${product.image || 'default_image.jpg'}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <p>$${product.price}</p>
+            `;
+
+            productGrid.appendChild(productElement);
+        });
+    } catch (error) {
+        console.error('Failed to load products:', error);
+    }
+}
+
+function filterProducts() {
+    const categoryId = document.getElementById('categories').value;
+    console.log('Selected category:', categoryId);
+    // Load products based on the selected category
+    loadProducts(categoryId);
+}
+
+</script>
 </body>
 </html>

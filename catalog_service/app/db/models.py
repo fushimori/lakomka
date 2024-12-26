@@ -21,7 +21,7 @@ class Product(Base):
     images = relationship("ProductImage", back_populates="product")
     reviews = relationship("Review", back_populates="product")
     questions = relationship("Question", back_populates="product")
-    related_products = relationship("Product", secondary="related_products", back_populates="related_products")
+    # related_products = relationship("Product", secondary="related_products", back_populates="related_products")
 
 class Category(Base):
     __tablename__ = "categories"

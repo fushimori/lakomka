@@ -3,6 +3,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 # Схема для изображения товара
 class ProductImageBase(BaseModel):
     image_url: str
@@ -40,12 +41,12 @@ class ProductImageBase(BaseModel):
 
 
 # Схема для категории (Category)
-class Category(BaseModel):
+class CategorySchemas(BaseModel):
     id: int
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Схема для продавца (Seller)
 class Seller(BaseModel):

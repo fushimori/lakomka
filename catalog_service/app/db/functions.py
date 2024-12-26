@@ -3,12 +3,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 from db.models import Product, Category
-from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas
+from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas, ProductBase
 
 # Получение всех продуктов с пагинацией
-async def get_all_products(db: AsyncSession, skip: int = 0, limit: int = 100):
-    result = await db.execute(select(Product).order_by(Product.name).offset(skip).limit(limit))
-    return result.scalars().all()
+async def get_all_products(db: AsyncSession, category: int = None, search: str = '', skip: int = 0, limit: int = 100):
+    print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
+    if category:
+        if search != '':
+            print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
+            result = await db.execute(
+                select(Product).filter(Product.category_id == category).filter(
+                    Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit))
+        else:
+            result = await db.execute(
+                select(Product).filter(Product.category_id == category).order_by(Product.name).offset(skip).limit(
+                    limit))
+    else:
+        result = await db.execute(select(Product).order_by(Product.name).offset(skip).limit(limit))
+    products = result.scalars().all()
+    products_list = [ProductBase.from_orm(product) for product in products]
+
+    products_dict = [product.dict() for product in products_list]
+
+    return products_dict
 
 # Получение одного продукта
 async def get_product_by_id(db: AsyncSession, product_id: int):

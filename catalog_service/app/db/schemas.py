@@ -22,7 +22,7 @@ class ProductBase(BaseModel):
     seller_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Product(ProductBase):
     id: int
@@ -31,7 +31,7 @@ class Product(ProductBase):
     images: List[ProductImageBase] = []  # Список изображений товара
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductImageBase(BaseModel):
     image_url: str  # Ссылка на изображение товара

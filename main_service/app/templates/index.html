@@ -53,9 +53,9 @@
             <button onclick="searchProducts()">Search</button>
         </div>
         <div class="filters">
-            <label for="categories">Category:</label>
+            <label for="categories">Выберите категорию:</label>
             <select id="categories" onchange="filterProducts()">
-<!--                 <option value="">All</option>-->
+                 <option value="">Все товары</option>
 <!--                {% for category in categories %}-->
 <!--                    <option value="{{ category.id }}">{{ category.name }}</option>-->
 <!--                {% endfor %}-->
@@ -83,6 +83,7 @@ async function loadCategories() {
     try {
         const response = await fetch('http://localhost:8003/api/categories');
         const categories = await response.json();
+        console.log('Categories loaded:', categories);
         const categoriesSelect = document.getElementById('categories');
 
         // Adding categories to the dropdown list
@@ -97,10 +98,23 @@ async function loadCategories() {
     }
 }
 
-async function loadProducts(categoryId = null) {
+async function loadProducts(categoryId = null, searchQuery = '') {
     try {
         // Construct the URL with the category filter if provided
-        const url = categoryId ? `http://localhost:8003/api/products?category=${categoryId}` : 'http://localhost:8003/api/products';
+        let url = 'http://localhost:8003/api/products';
+        const queryParams = [];
+        if (searchQuery) {
+            queryParams.push(`search=${searchQuery}`);
+        }
+        else {
+            queryParams.push(`search=''`);
+        }
+        if (categoryId) {
+            queryParams.push(`category=${categoryId}`);
+        }
+        if (queryParams.length > 0) {
+            url += '?' + queryParams.join('&');
+        }
         const response = await fetch(url);
         const products = await response.json();
         const productGrid = document.getElementById('productGrid');
@@ -127,9 +141,19 @@ async function loadProducts(categoryId = null) {
 
 function filterProducts() {
     const categoryId = document.getElementById('categories').value;
+    const searchQuery = document.getElementById('search').value;
     console.log('Selected category:', categoryId);
+    console.log('Search query:', searchQuery);
     // Load products based on the selected category
-    loadProducts(categoryId);
+    loadProducts(categoryId, searchQuery);
+}
+function searchProducts() {
+    const categoryId = document.getElementById('categories').value;
+    const searchQuery = document.getElementById('search').value;
+    console.log('Selected category:', categoryId);
+    console.log('Search query:', searchQuery);
+    // Load products based on the selected category
+    loadProducts(categoryId, searchQuery);
 }
 
 </script>

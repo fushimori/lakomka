@@ -1,12 +1,14 @@
 # catalog_service/app/main.py
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
 from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas  # Импортируем Pydantic модель
 from typing import List, AsyncGenerator
 from db.functions import get_all_products, get_product_by_id, get_all_categories, create_product, update_product, delete_product
 from db.init_db import init_db
+from fastapi.middleware.cors import CORSMiddleware
+
 
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     await init_db()
@@ -14,18 +16,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8000"],  # Укажите адрес фронтенда
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/products", response_model=List[ProductSchema])  # Указываем Pydantic модель для списка продуктов
-async def read_products(db: AsyncSession = Depends(get_db)):
-    products = await get_all_products(db)
+
+@app.get("/api/products")  # Указываем Pydantic модель для списка продуктов
+async def read_products(searchquery: str = Query(default='', alias="search"), category: int = None, db: AsyncSession = Depends(get_db)):
+    products = await get_all_products(db, category, searchquery)
+    print("DEBUG CATALOG SERVICE: category: ", category)
+    print("DEBUG CATALOG SERVICE: searchquery: ", searchquery)
+    print("DEBUG CATALOG SERVICE: products: ", products)
     return products
 
 
 @app.get("/api/categories")
 async def get_categories(db: AsyncSession = Depends(get_db)):
     categories = await get_all_categories(db)
-    print("DEBUG CATALOG SERVICE: categories: ", categories)
+    # print("DEBUG CATALOG SERVICE: categories: ", categories)
     return categories
+
 
 
 @app.get("/products/{product_id}", response_model=ProductSchema)  # Указываем Pydantic модель для одного товара

@@ -85,3 +85,4 @@ class RelatedProduct(Base):
     product = relationship("Product", foreign_keys=[product_id])
     related_product = relationship("Product", foreign_keys=[related_product_id])
 
+

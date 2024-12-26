@@ -7,7 +7,7 @@ from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas, P
 
 # Получение всех продуктов с пагинацией
 async def get_all_products(db: AsyncSession, category: int = None, search: str = '', skip: int = 0, limit: int = 100):
-    print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
+    # print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
     if category:
         if search != '':
             print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
@@ -18,6 +18,9 @@ async def get_all_products(db: AsyncSession, category: int = None, search: str =
             result = await db.execute(
                 select(Product).filter(Product.category_id == category).order_by(Product.name).offset(skip).limit(
                     limit))
+    elif search != '':
+        result = await db.execute(select(Product).filter(
+            Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit))
     else:
         result = await db.execute(select(Product).order_by(Product.name).offset(skip).limit(limit))
     products = result.scalars().all()

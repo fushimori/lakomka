@@ -107,7 +107,7 @@ async function loadProducts(categoryId = null, searchQuery = '') {
             queryParams.push(`search=${searchQuery}`);
         }
         else {
-            queryParams.push(`search=''`);
+            queryParams.push(`search=`);
         }
         if (categoryId) {
             queryParams.push(`category=${categoryId}`);

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+</head>
+<body>
+    <h1>Profile for email: {{ profile.email }}</h1>
+    <p>Status: {% if profile.is_active %}Active{% else %}Inactive{% endif %}</p>
+    <p>Loyalty Card Number: {% if profile.loyalty_card_number %}{{ profile.loyalty_card_number }}{% else %}Not available{% endif %}</p>
+
+    <h2>Wishlist</h2>
+    {% if profile.wishlist %}
+        <ul>
+        {% for item in profile.wishlist %}
+            <li>Product ID: {{ item.product_id }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No items in wishlist.</p>
+    {% endif %}
+
+    <h2>Orders</h2>
+    {% if profile.orders %}
+        <ul>
+        {% for order in profile.orders %}
+            <li>
+                <p>Order ID: {{ order.order_id }} (Status: {{ order.status }})</p>
+                {% if order.items and order.items is iterable %}
+                    <ul>
+                    {% for item in order.items %}
+                        <li>Product ID: {{ item.product_id }}, Quantity: {{ item.quantity }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No items in this order.</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+</body>
+</html>

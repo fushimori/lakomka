@@ -1,24 +1,4 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="en">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-<!--    <title>Home</title>-->
-<!--    <link rel="stylesheet" href="/static/style.css">-->
-<!--</head>-->
-<!--<body>-->
-<!--    <h1>Welcome to the Home Page</h1>-->
-<!--     {% if username %}-->
-<!--        <p>Hello, {{ username }}!</p>-->
-<!--        <form action="/logout" method="post">-->
-<!--                <button type="submit">Выйти</button>-->
-<!--            </form>-->
-<!--    {% else %}-->
-<!--        <p>Please <a href="/login">login</a> or <a href="/signup">register</a>.</p>-->
-<!--    {% endif %}-->
-<!--</body>-->
-<!--</html>-->
-
+<!-- main_service/app/templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,11 +13,8 @@
             <h1>Lakomka</h1>
         </div>
         <div>
-            {% if username %}
-            <a href="/profile/">{{ username }}</a>
-<!--            <form action="/logout" method="post">-->
-<!--                    <button type="submit">Выйти</button>-->
-<!--            </form>-->
+            {% if email %}
+            <a href="/profile/">{{ email }}</a>
             <a href="/logout">Log out</a>
             {% else %}
                 <a href="/login">Login</a>
@@ -55,10 +32,7 @@
         <div class="filters">
             <label for="categories">Category:</label>
             <select id="categories" onchange="filterProducts()">
-<!--                 <option value="">All</option>-->
-<!--                {% for category in categories %}-->
-<!--                    <option value="{{ category.id }}">{{ category.name }}</option>-->
-<!--                {% endfor %}-->
+                <!-- Categories will be dynamically added here -->
             </select>
         </div>
         <div class="product-grid" id="productGrid">

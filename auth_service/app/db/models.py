@@ -22,7 +22,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)  # Активен ли пользователь
     role = Column(Enum(RoleEnum), default=RoleEnum.user)  # Роль пользователя
-    # loyalty_card_number = Column(String, unique=True, nullable=True, default="")  # Номер карты лояльности (если есть)
+    loyalty_card_number = Column(String, unique=True, nullable=True, default="")  # Номер карты лояльности (если есть)
 
     # Связь с отложенными товарами
     wishlist = relationship("Wishlist", back_populates="user")

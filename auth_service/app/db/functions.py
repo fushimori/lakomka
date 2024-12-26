@@ -21,7 +21,48 @@ async def get_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(select(User).filter(User.email == email))
     return result.scalar_one_or_none()
 
+async def get_user_with_details(db: AsyncSession, email: str):
+    """
+    Получить информацию о пользователе, включая список желаемого и заказы, в формате JSON.
+    """
+    # Запрос для получения пользователя с его связями
+    result = await db.execute(
+        select(User)
+        .filter(User.email == email)
+        .options(
+            selectinload(User.wishlist),
+            selectinload(User.orders).selectinload(Order.order_items)
+        )
+    )
+    user = result.scalar_one_or_none()
 
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Преобразование данных в JSON
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "is_active": user.is_active,
+        "loyalty_card_number": user.loyalty_card_number,
+        "wishlist": [
+            {"product_id": item.product_id} for item in user.wishlist
+        ],
+        "orders": [
+            {
+                "order_id": order.id,
+                "status": order.status,
+                "items": [
+                    {"product_id": item.product_id, "quantity": item.quantity}
+                    for item in order.order_items
+                ]
+            }
+            for order in user.orders
+        ]
+    }
+
+    return user_data
+    
 # Функция для создания нового пользователя
 async def create_user(db: AsyncSession, user_data: dict): # user_data: UserBase
     print("DEBUG: auth function create_user, user_data:", user_data)

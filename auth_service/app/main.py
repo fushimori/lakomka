@@ -1,16 +1,18 @@
+# auth_service/app/main.py
 import json
 import asyncio
-from fastapi import FastAPI
+from fastapi import Depends, HTTPException, status, FastAPI
 from auth_utils import hash_password, verify_password, create_access_token
 from db.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.functions import create_user, get_user_by_email
+from db.functions import create_user, get_user_with_details, get_user_by_email
 from db.init_db import init_db
 import aio_pika
+from fastapi.security import OAuth2PasswordBearer
+from jwt import DecodeError, ExpiredSignatureError, decode
 
 # RabbitMQ Host
 RABBITMQ_HOST = "rabbitmq"
-
 # FastAPI Application
 app = FastAPI()
 
@@ -19,6 +21,20 @@ app = FastAPI()
 async def app_startup():
     await init_db()
     asyncio.create_task(consume_messages())
+
+@app.get("/profile")
+async def get_profile(email: str, db: AsyncSession = Depends(get_db)):
+    """Получить профиль текущего пользователя по email."""
+    print(f"DEBUG: Fetching profile for user {email}")
+    
+    user_details = await get_user_with_details(db, email)
+    
+    if not user_details:
+        print(f"ERROR: User {email} not found in database.")
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    print(f"DEBUG: Profile data for user {email}: {user_details}")
+    return user_details
 
 
 @app.get("/")

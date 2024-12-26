@@ -2,25 +2,18 @@ from fastapi import FastAPI, Request, Form, Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import pika
-from pika.exceptions import AMQPConnectionError
 import uuid
 import json
 import time
 import jwt
 import httpx
+import aio_pika
+import asyncio
 
 app = FastAPI()
 
 # RabbitMQ connection setup
 RABBITMQ_HOST = "rabbitmq"
-
-# connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-# channel = connection.channel()
-
-
-# Declare a queue
-# channel.queue_declare(queue='user_events')
 
 # Templates and static files
 templates = Jinja2Templates(directory="templates")
@@ -42,72 +35,68 @@ def decode_jwt(token: str) -> str:
         raise Exception("Invalid token")
 
 
-def connection_rabbit():  # (?)
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-    channel = connection.channel()
-    channel.queue_declare(queue='user_events')
-    return connection, channel
-
 TIMEOUT = 5  # Максимальное время ожидания ответа в секундах
 
-def send_request_and_wait_for_response(message):
+
+async def connection_rabbit():
+    """Подключение к RabbitMQ с использованием aio_pika."""
+    connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq/")
+    channel = await connection.channel()
+    return connection, channel
+
+
+async def send_request_and_wait_for_response(message):
     """Send a request to RabbitMQ and wait for a response with a timeout."""
     try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-        channel = connection.channel()
+        connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq/")
+        channel = await connection.channel()
     except Exception as e:
-        return "RabbiMQ is no ready"
+        return {"error": f"RabbitMQ is not ready: {str(e)}"}
 
     # Declare a callback queue for the response
-    result = channel.queue_declare(queue='', exclusive=True)
-    callback_queue = result.method.queue
+    result = await channel.declare_queue('', exclusive=False, auto_delete=True)
+    callback_queue = result.name  # Используем result.name для получения имени очереди
 
     correlation_id = str(uuid.uuid4())
 
     response = None
     start_time = time.time()
 
-    def on_response(ch, method, properties, body):
+    # Create a message handler for the response
+    async def on_response(message: aio_pika.IncomingMessage):
         nonlocal response
-        if properties.correlation_id == correlation_id:
-            response = json.loads(body)
+        async with message.process():
+            if message.properties.correlation_id == correlation_id:
+                response = json.loads(message.body.decode())
 
-    # Consume messages from the callback queue
-    channel.basic_consume(queue=callback_queue, on_message_callback=on_response, auto_ack=True)
-
-    # Send the request message
-    channel.basic_publish(
-        exchange='',
-        routing_key='user_events',
-        properties=pika.BasicProperties(
+    # Start consuming messages from the callback queue
+    await channel.default_exchange.publish(
+        aio_pika.Message(
+            body=json.dumps(message).encode(),
             reply_to=callback_queue,
             correlation_id=correlation_id
         ),
-        body=json.dumps(message)
+        routing_key='user_events'
     )
+
+    # Start listening for responses
+    await result.consume(on_response)
 
     print("Waiting for response...")
 
-    # Ждем ответа с тайм-аутом
+    # Wait for the response with timeout
     while response is None:
-        connection.process_data_events()  # Process RabbitMQ events
-        # Проверяем, прошло ли время ожидания
+        await asyncio.sleep(0.1)  # Avoid blocking the event loop
         if time.time() - start_time > TIMEOUT:
-            connection.close()
+            await connection.close()
             return {"error": "Request timed out. Please try again later."}
 
-    connection.close()
+    await connection.close()
     return response
 
 
 @app.get("/", response_class=HTMLResponse)
 async def read_home(request: Request):
-    # user_data = request.cookies.get("user_data")
-    # if user_data:
-    #     user = json.loads(user_data)
-    #     username = user.get("username", "Unknown User")
-    # else:
-    #     username = None
     jwt_token = request.cookies.get("access_token")
     if jwt_token:
         username = decode_jwt(jwt_token)
@@ -116,65 +105,43 @@ async def read_home(request: Request):
     print("DEBUG: main_service check cookies: username - ", username)
     return templates.TemplateResponse("index.html", {"request": request, "username": username})
 
+
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
 
 @app.get("/signup", response_class=HTMLResponse)
 async def signup(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
-# @app.post("/register")
-# async def register(username: str = Form(...), password: str = Form(...)):
-#     try:
-#         connection_rabbit()
-#         print("Отправляем форму")
-#         message = json.dumps({"event": "register_request", "username": username, "password": password})
-#         channel.basic_publish(exchange='', routing_key='user_events', body=message)
-#         return {"message": "Registration request sent to auth service"}
-#     except Exception as e:
-#         return {"error": f"Failed to send message to RabbitMQ: {e}"}
-#
-# @app.post("/login")
-# async def login_action(username: str, password: str):
-#     async with httpx.AsyncClient() as client:
-#         # connection_rabbit()
-#         response = await client.get(f"{AUTH_SERVICE_URL}/check_user/{username}")
-#         if response.status_code == 200:
-#             return {"message": "Logged in successfully"}
-#         else:
-#             return {"message": "User not found"}
-
 
 @app.post("/register")
-async def register(username: str = Form(...), password: str = Form(...)):
+async def register(email: str = Form(...), password: str = Form(...)):
     """Send a registration request to the auth service."""
-    message = {"event": "register_request", "username": username, "password": password}
-    response = send_request_and_wait_for_response(message)
+    message = {"event": "register_request", "email": email, "password": password}
+    response = await send_request_and_wait_for_response(message)
     return response
 
 
 @app.post("/login")
-async def login_action(username: str = Form(...), password: str = Form(...)):
+async def login_action(email: str = Form(...), password: str = Form(...)):
     """Send a login request to the auth service."""
     print("DEBUG: main_service in post login")
-    message = {"event": "login_request", "username": username, "password": password}
-    response = send_request_and_wait_for_response(message)
+    message = {"event": "login_request", "email": email, "password": password}
+    response = await send_request_and_wait_for_response(message)
     if response.get("status") == "success":
         token = response.get("token")
-        # user = response.get("user")
-        # response = HTMLResponse(content="Login successful! Redirecting...", status_code=200)
         response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(key="access_token", value=token, httponly=True, secure=True)
-        # response.set_cookie(key="user_data", value=json.dumps(user), httponly=True, secure=True)
         return response
     else:
         return response
 
+
 @app.post("/logout")
 async def logout(response: Response):
     """Удаление токена и данных пользователя."""
-    # response = HTMLResponse(content="Logged out successfully!", status_code=200)
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     response.delete_cookie("user_data")

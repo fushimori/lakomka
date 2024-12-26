@@ -22,7 +22,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)  # Активен ли пользователь
     role = Column(Enum(RoleEnum), default=RoleEnum.user)  # Роль пользователя
-    loyalty_card_number = Column(String, unique=True, nullable=True)  # Номер карты лояльности (если есть)
+    # loyalty_card_number = Column(String, unique=True, nullable=True, default="")  # Номер карты лояльности (если есть)
 
     # Связь с отложенными товарами
     wishlist = relationship("Wishlist", back_populates="user")
@@ -63,6 +63,6 @@ class OrderItem(Base):
     product_id = Column(Integer,nullable=False)
     quantity = Column(Integer, default=1)  # Количество товара
 
-    # Связи
+    #  Связи
     order = relationship("Order", back_populates="order_items")
-    product = relationship("Product", back_populates="order_items")
+    # product = relationship("Product", back_populates="order_items")

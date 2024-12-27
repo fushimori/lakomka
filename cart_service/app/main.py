@@ -56,7 +56,7 @@ async def add_to_cart(product_id: int = None, token: str = Depends(oauth2_scheme
     else:
         raise HTTPException(status_code=500, detail="Failed to add product to cart")
 
-
+# убрать обращение к бд здесь
 @app.get("/check_cart")
 async def check_cart(product_id: int = None, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     user_id = verify_token(token)  # Проверка токена
@@ -80,6 +80,19 @@ async def check_cart(product_id: int = None, token: str = Depends(oauth2_scheme)
     if cart_item:
         return {"exists": True}
     return {"exists": False}
+
+
+@app.get("/cart/delete")
+async def delete_from_cart(product_id: int = None, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    user_id = verify_token(token)
+    cart = await remove_product_from_cart(db, user_id, product_id)
+    print("DEBUG CART SERVICE delete_from_cart, user_id:", user_id, "token:", token)# Получаем user_id из токена
+    print("DEBUG CART SERVICE delete_from_cart, cart:", cart)
+    # Здесь логика добавления товара в корзину для user_id
+    if cart:
+        return {"success": True, "message": "Product delete from cart"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to delete product from cart")
 
 
 @app.get("/cart/{user_id}")

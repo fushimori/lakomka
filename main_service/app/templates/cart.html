@@ -68,12 +68,36 @@
                                     <p><strong>Product Name:</strong> ${item.product_name}</p>
                                     <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
                                     <p><strong>Quantity:</strong> ${item.quantity}</p>
+                                    <button class="delete-button" onclick="deleteItem(${item.product_id}, 'YOUR_TOKEN_HERE')">Delete</button>
                                 </div>
                             `).join('')}
                         ` : '<p class="empty-message">EMPTY</p>'}
                     </div>
                 </div>
             `;
+        }
+
+        async function deleteItem(productId, token) {
+            try {
+                const token = "{{ token }}"
+                console.log("JWT Token:", token);
+                const response = await fetch(`http://localhost:8004/cart/delete?product_id=${productId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to delete item');
+                }
+                // После успешного удаления обновляем корзину
+<!--                alert('Item deleted successfully');-->
+                location.reload(); // Перезагружаем страницу, чтобы обновить список товаров
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert('Failed to delete item');
+            }
         }
     </script>
 </head>

@@ -174,7 +174,7 @@ async def get_cart(request: Request):
         return RedirectResponse(url="/login", status_code=303)
 
     # Передаем только email в шаблон
-    return templates.TemplateResponse("cart.html", {"request": request, "email": email})
+    return templates.TemplateResponse("cart.html", {"request": request, "email": email, "token": jwt_token})
 
 @app.get("/wishlist", response_class=HTMLResponse)
 async def get_wishlist(request: Request):

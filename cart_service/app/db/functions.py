@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from fastapi import HTTPException
 from db.models import Cart, CartItem
 from sqlalchemy.orm import joinedload
+from sqlalchemy import text
 
 async def get_cart_items(db: AsyncSession, user_id: int):
     """
@@ -31,13 +32,14 @@ async def get_cart_items(db: AsyncSession, user_id: int):
 
 # Получение корзины по ID пользователя
 async def get_cart_by_user_id(db: AsyncSession, user_id: int):
-    result = await db.execute(select(Cart).filter(Cart.user_id == user_id).options(joinedload(Cart.items)))
+    result = await db.execute(select(Cart).filter(Cart.user_id == user_id))
     return result.scalar_one_or_none()
 
 # Добавление товара в корзину
-async def add_product_to_cart(db: AsyncSession, user_id: int, product_id: int, quantity: int):
+async def add_product_to_cart(db: AsyncSession, user_id: int, product_id: int, quantity: int = 1):
     # Проверим, есть ли корзина для данного пользователя
     cart = await get_cart_by_user_id(db, user_id)
+    print("DEBUG CART SERVICE add_product_to_cart, cart: ", cart)
     if not cart:
         # Если корзины нет, создадим новую
         cart = Cart(user_id=user_id)

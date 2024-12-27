@@ -149,7 +149,7 @@ async def get_profile(request: Request):
         return RedirectResponse(url="/login", status_code=303)
 
     # Передаем только email в шаблон
-    return templates.TemplateResponse("profile.html", {"request": request, "email": email})
+    return templates.TemplateResponse("profile.html", {"request": request, "email": email, "token": jwt_token})
 
 @app.get("/cart", response_class=HTMLResponse)
 async def get_cart(request: Request):
@@ -182,7 +182,8 @@ async def login(request: Request):
 
 @app.get("/product", response_class=HTMLResponse)
 async def product(request: Request):
-    return templates.TemplateResponse("product.html", {"request": request})
+    jwt_token = request.cookies.get("access_token")
+    return templates.TemplateResponse("product.html", {"request": request, "token": jwt_token})
 
 
 @app.get("/signup", response_class=HTMLResponse)

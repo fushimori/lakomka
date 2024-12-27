@@ -60,7 +60,15 @@
 
         async function checkCart(productId) {
             try {
-                const response = await fetch(`http://localhost:8003/api/check_cart?product_id=${productId}`);
+                const token = "{{ token }}"
+                console.log("JWT Token:", token);
+                const response = await fetch(`http://localhost:8004/check_cart?product_id=${productId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 if (!response.ok) {
                     throw new Error('Ошибка при проверке корзины');
                 }
@@ -86,6 +94,7 @@
 
         async function addToCart(productId) {
             try {
+                const token = "{{ token }}"
                 const response = await fetch(`http://localhost:8004/cart/add?product_id=${productId}`, {
                     method: 'GET',
                     headers: {

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+    <link rel="stylesheet" href="/static/cart.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const email = "{{ email }}"; // Получаем email из шаблона
+
+            try {
+                // Шаг 1: Получаем user_id по email
+                console.log("DEBUG: Email is:", email);
+                const userIdResponse = await fetch(`http://localhost:8001/get_user_id?email=${email}`);
+                if (!userIdResponse.ok) {
+                    throw new Error('Failed to fetch user ID');
+                }
+                const { user_id } = await userIdResponse.json();
+                console.log("DEBUG: User ID is:", user_id);
+
+                // Шаг 2: Получаем товары корзины по user_id
+                const cartResponse = await fetch(`http://localhost:8004/cart/${user_id}`);
+                if (!cartResponse.ok) {
+                    throw new Error('Failed to fetch cart items');
+                }
+                const cartItems = await cartResponse.json();
+
+                // Шаг 3: Отображаем товары на странице
+                renderCart(cartItems);
+            } catch (error) {
+                console.error('Error:', error);
+                const cartContainer = document.getElementById('cartContainer');
+                cartContainer.innerHTML = `<p style="color: red;">Error loading cart data. Please try again later.</p>`;
+            }
+        });
+
+        function renderCart(cartItems) {
+            const cartContainer = document.getElementById('cartContainer');
+            cartContainer.innerHTML = `
+                <header>
+                    <div>
+                        <h1>Lakomka</h1>
+                    </div>
+                    <div>
+                        <a href="/">Home</a>
+                        <a href="/logout">Log out</a>
+                    </div>
+                </header>
+                <div class="cart-info">
+                    <h1>Your Cart</h1>
+                </div>
+
+                <div class="cart-items">
+                    <div class="items-grid">
+                        ${cartItems.length > 0 ? `
+                            ${cartItems.map(item => `
+                                <div class="item-card">
+                                    <p><strong>Product ID:</strong> ${item.product_id}</p>
+                                    <p><strong>Quantity:</strong> ${item.quantity}</p>
+                                </div>
+                            `).join('')}
+                        ` : '<p>Your cart is empty.</p>'}
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</head>
+<body>
+    <div id="cartContainer">
+        <!-- Здесь будут отображаться данные корзины -->
+    </div>
+</body>
+</html>

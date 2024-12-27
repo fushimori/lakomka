@@ -5,6 +5,30 @@ from fastapi import HTTPException
 from db.models import Cart, CartItem
 from sqlalchemy.orm import joinedload
 
+async def get_cart_items(db: AsyncSession, user_id: int):
+    """
+    Получить товары из корзины пользователя.
+    """
+    # Запрос для получения корзины пользователя
+    cart_result = await db.execute(select(Cart).filter(Cart.user_id == user_id))
+    cart = cart_result.scalar_one_or_none()
+
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+
+    # Запрос для получения товаров в корзине
+    cart_items_result = await db.execute(select(CartItem).filter(CartItem.cart_id == cart.id))
+    cart_items = cart_items_result.scalars().all()
+
+    # Формируем список товаров
+    items = [
+        {"product_id": item.product_id, "quantity": item.quantity}
+        for item in cart_items
+    ]
+    print("DEBUG: cart items: ", items)
+
+    return items
+
 # Получение корзины по ID пользователя
 async def get_cart_by_user_id(db: AsyncSession, user_id: int):
     result = await db.execute(select(Cart).filter(Cart.user_id == user_id).options(joinedload(Cart.items)))

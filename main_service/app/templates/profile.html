@@ -4,43 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile</title>
+    <link rel="stylesheet" href="/static/profile.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const email = "{{ email }}";  // Получаем email из шаблона
+            fetchProfileData(email);
+        });
+
+        async function fetchProfileData(email) {
+            try {
+                const response = await fetch(`http://localhost:8001/profile?email=${email}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile data');
+                }
+                const profileData = await response.json();
+                renderProfile(profileData);
+            } catch (error) {
+                console.error('Error fetching profile data:', error);
+                const profileContainer = document.getElementById('profileContainer');
+                profileContainer.innerHTML = `<p style="color: red;">Error loading profile data. Please try again later.</p>`;
+            }
+        }
+
+        function renderProfile(profileData) {
+            const profileContainer = document.getElementById('profileContainer');
+            profileContainer.innerHTML = `
+                <header>
+                    <div>
+                        <h1>Lakomka</h1>
+                    </div>
+                    <div>
+                        <a href="/">Home</a>
+                        <a href="/logout">Log out</a>
+                    </div>
+                </header>
+                <div class="profile-info">
+                    <h1>Profile for email: ${profileData.email}</h1>
+                    <p>Status: ${profileData.is_active ? 'Active' : 'Inactive'}</p>
+                    <p>Loyalty Card Number: ${profileData.loyalty_card_number || 'Not available'}</p>
+                </div>
+
+                <div class="wishlist">
+                    <h2>Wishlist</h2>
+                    ${profileData.wishlist && profileData.wishlist.length > 0 ? `
+                        <ul>
+                            ${profileData.wishlist.map(item => `<li>Product ID: ${item.product_id}</li>`).join('')}
+                        </ul>
+                    ` : '<p>No items in wishlist.</p>'}
+                </div>
+
+                <div class="orders">
+                    <h2>Orders</h2>
+                    ${profileData.orders && profileData.orders.length > 0 ? `
+                        <ul>
+                            ${profileData.orders.map(order => `
+                                <li>
+                                    <p>Order ID: ${order.order_id} (Status: ${order.status})</p>
+                                    ${order.items && order.items.length > 0 ? `
+                                        <ul>
+                                            ${order.items.map(item => `<li>Product ID: ${item.product_id}, Quantity: ${item.quantity}</li>`).join('')}
+                                        </ul>
+                                    ` : '<p>No items in this order.</p>'}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p>No orders found.</p>'}
+                </div>
+            `;
+        }
+    </script>
 </head>
 <body>
-    <h1>Profile for email: {{ profile.email }}</h1>
-    <p>Status: {% if profile.is_active %}Active{% else %}Inactive{% endif %}</p>
-    <p>Loyalty Card Number: {% if profile.loyalty_card_number %}{{ profile.loyalty_card_number }}{% else %}Not available{% endif %}</p>
-
-    <h2>Wishlist</h2>
-    {% if profile.wishlist %}
-        <ul>
-        {% for item in profile.wishlist %}
-            <li>Product ID: {{ item.product_id }}</li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No items in wishlist.</p>
-    {% endif %}
-
-    <h2>Orders</h2>
-    {% if profile.orders %}
-        <ul>
-        {% for order in profile.orders %}
-            <li>
-                <p>Order ID: {{ order.order_id }} (Status: {{ order.status }})</p>
-                {% if order.items and order.items is iterable %}
-                    <ul>
-                    {% for item in order.items %}
-                        <li>Product ID: {{ item.product_id }}, Quantity: {{ item.quantity }}</li>
-                    {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No items in this order.</p>
-                {% endif %}
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No orders found.</p>
-    {% endif %}
+    <div id="profileContainer">
+        <!-- Здесь будут отображаться данные профиля -->
+    </div>
 </body>
 </html>

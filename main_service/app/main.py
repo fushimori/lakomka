@@ -148,31 +148,33 @@ async def get_profile(request: Request):
         print(f"DEBUG: JWT decoding error: {e.detail}")
         return RedirectResponse(url="/login", status_code=303)
 
-    profile_data = None  # Инициализация переменной
+    # Передаем только email в шаблон
+    return templates.TemplateResponse("profile.html", {"request": request, "email": email})
+
+@app.get("/cart", response_class=HTMLResponse)
+async def get_cart(request: Request):
+    """Рендерит корзину с данными, полученными через API."""
+    jwt_token = request.cookies.get("access_token")
+    
+    if not jwt_token:
+        print("DEBUG: No JWT token found in cookies")
+        return RedirectResponse(url="/login", status_code=303)
 
     try:
-        async with httpx.AsyncClient() as client:
-            print(f"DEBUG: Sending request to auth_service for profile data with payload: {email}")
-            response = await client.get(
-                f"{AUTH_SERVICE_URL}/profile?email={email}",  # Переход на эндпоинт с email
+        # Декодируем payload
+        email = decode_jwt(jwt_token)
+        if not email:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token: email not found"
             )
-            response.raise_for_status()
-            profile_data = response.json()  # Присваиваем данные профиля
-            print(f"DEBUG: Received profile data from auth_service: {profile_data}")
-    except httpx.HTTPStatusError as e:
-        print(f"DEBUG: Error fetching profile from auth_service - Status: {e.response.status_code}, Body: {e.response.text}")
+        print(f"DEBUG: Decoded JWT token for email: {email}")
+    except HTTPException as e:
+        print(f"DEBUG: JWT decoding error: {e.detail}")
         return RedirectResponse(url="/login", status_code=303)
-    except Exception as e:
-        print(f"DEBUG: Unexpected error fetching profile from auth_service: {str(e)}")
-        return RedirectResponse(url="/", status_code=500)
 
-    if profile_data is None:
-        print("DEBUG: No profile data received, redirecting to login.")
-        return RedirectResponse(url="/login", status_code=303)
-    print("Profile data being passed to template:", profile_data)
-
-    return templates.TemplateResponse("profile.html", {"request": request, "profile": profile_data})
-
+    # Передаем только email в шаблон
+    return templates.TemplateResponse("cart.html", {"request": request, "email": email})
 
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):

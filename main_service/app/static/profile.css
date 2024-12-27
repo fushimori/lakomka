@@ -1,0 +1,166 @@
+/* Основные стили для страницы профиля */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5faff;
+    color: #333;
+}
+
+header {
+    background-color: #007bff;
+    color: #fff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+header a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* Стили для информации о профиле */
+.profile-info {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+.profile-info p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* Стили для списка желаний */
+.wishlist {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wishlist h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+.wishlist ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.wishlist li {
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Стили для списка заказов */
+.orders {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.orders h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+.orders ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.orders li {
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.orders li p {
+    margin: 5px 0;
+}
+
+.orders li ul {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+.orders li ul li {
+    font-size: 14px;
+    margin-bottom: 5px;
+    padding: 5px;
+    border: none;
+    background-color: #fff;
+}
+
+/* Стили для кнопок и ссылок */
+.button {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 10px;
+    }
+
+    .profile-info h1 {
+        font-size: 20px;
+    }
+
+    .wishlist h2, .orders h2 {
+        font-size: 18px;
+    }
+
+    .wishlist li, .orders li {
+        font-size: 14px;
+    }
+}

@@ -36,7 +36,7 @@
                 const seller = await sellerResponse.json();
 
                 // Обновляем DOM
-                document.getElementById('product-image').src = product.image_url || 'https://via.placeholder.com/400';
+                document.getElementById('product-image').src = product.image_url || 'https://www.iephb.ru/wp-content/uploads/2021/01/img-placeholder.png';
                 document.getElementById('product-title').textContent = product.name;
                 document.getElementById('product-price').textContent = `Всего за ${product.price} рублей`;
                 document.getElementById('product-description').textContent = product.description;

@@ -26,7 +26,7 @@
                     if (productResponse.ok) {
                         const product = await productResponse.json();
                         item.product_name = product.name;
-                        item.product_image = product.image_url || 'https://via.placeholder.com/400';
+                        item.product_image = product.image_url || 'https://www.iephb.ru/wp-content/uploads/2021/01/img-placeholder.png';
                     }
                 }
 
@@ -66,10 +66,10 @@
 
                 <!-- Кнопка для создания заказа -->
                 ${cartItems.length > 0 ? `
-            <div class="order-button">
-                <button onclick="createOrder()">Make Order</button>
-            </div>
-        ` : ''}
+                    <div class="order-button">
+                        <button class="create-order-btn" onclick="createOrder()">Создать заказ</button>
+                    </div>
+                ` : ''}
             `;
         }
 

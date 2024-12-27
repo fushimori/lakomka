@@ -75,7 +75,7 @@ async function loadProducts(categoryId = null, searchQuery = '') {
             const productElement = document.createElement('div');
             productElement.className = 'product';
             productElement.innerHTML = `
-                <img src="${product.image || 'default_image.jpg'}" alt="${product.name}">
+                <img src="${product.image || 'https://www.iephb.ru/wp-content/uploads/2021/01/img-placeholder.png'}" alt="${product.name}">
                 <h3>${product.name}</h3>
                 <p>${product.price} ₽</p>
             `;

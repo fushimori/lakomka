@@ -76,6 +76,17 @@ header a:hover {
     color: #333;
 }
 
+.empty-message {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #888;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
 /* Стили для кнопок */
 .button {
     display: inline-block;

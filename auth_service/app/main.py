@@ -37,6 +37,11 @@ async def get_user_id(email: str, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, email)
     return {"user_id": user.id}
 
+@app.get("/role")
+async def get_role(email: str, db: AsyncSession = Depends(get_db)):
+    user = await get_user_by_email(db, email)
+    return {"role": user.role}
+
 @app.get("/profile")
 async def get_profile(email: str, db: AsyncSession = Depends(get_db)):
     """Получить профиль текущего пользователя по email."""

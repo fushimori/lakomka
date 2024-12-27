@@ -9,8 +9,9 @@ COPY requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Открываем порт 8003
-EXPOSE 8005
+RUN pip install alembic
+
+CMD alembic upgrade head && postgres
 
 # Запуск FastAPI приложения через Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005"]

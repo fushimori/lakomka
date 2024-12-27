@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 from db.models import Cart, CartItem
-from sqlalchemy.orm import joinedload
-from sqlalchemy import text
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import text, delete
 
 async def get_cart_items(db: AsyncSession, user_id: int):
     """
@@ -61,6 +61,46 @@ async def add_product_to_cart(db: AsyncSession, user_id: int, product_id: int, q
     
     await db.commit()
     return cart
+
+
+async def get_cart_with_items(db: AsyncSession, user_id: int):
+    # Выполняем запрос для получения корзины и её элементов
+    result = await db.execute(
+        select(Cart)
+        .where(Cart.user_id == user_id)
+        .options(selectinload(Cart.items))  # Подгружаем связанные элементы корзины
+    )
+    cart = result.scalar_one_or_none()
+
+    if not cart:
+        return None
+
+    # Преобразуем корзину и её элементы в словарь
+    cart_dict = {
+        "id": cart.id,
+        "user_id": cart.user_id,
+        "cart_items": [
+            {
+                "product_id": item.product_id,
+                "quantity": item.quantity,
+            }
+            for item in cart.items
+        ]
+    }
+
+    return cart_dict
+
+
+async def clear_user_cart(db: AsyncSession, user_id: int):
+    """Функция для очистки корзины пользователя"""
+    # Получаем корзину по user_id
+    cart = await db.execute(select(Cart).filter(Cart.user_id == user_id))
+    cart = cart.scalar_one_or_none()
+
+    if cart:
+        # Очищаем все элементы корзины пользователя
+        await db.execute(delete(CartItem).filter(CartItem.cart_id == cart.id))
+        await db.commit()  # Сохраняем изменения в базе данных
 
 # Удаление товара из корзины
 async def remove_product_from_cart(db: AsyncSession, user_id: int, product_id: int):

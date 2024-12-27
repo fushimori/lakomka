@@ -12,6 +12,9 @@
         <input type="text" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
         <button type="submit">Login</button>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
     </form>
     <a href="/">Back to Home</a>
 </body>

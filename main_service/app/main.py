@@ -110,21 +110,8 @@ async def read_home(request: Request):
         email = None
     print("DEBUG: main_service check cookies: email - ", email)
 
-    categories = [
-        {"id": 1, "name": "Laptops"},
-        {"id": 2, "name": "Desktops"},
-        {"id": 3, "name": "Accessories"}
-    ]
 
-    products = [
-        {"id": 1, "name": "MacBook Pro 16\"", "price": 2499.99, "image": "/static/images/macbook.jpg",
-         "category_id": 1},
-        {"id": 2, "name": "Dell XPS 15", "price": 1899.99, "image": "/static/images/dell.jpg", "category_id": 1},
-        {"id": 3, "name": "Gaming Desktop", "price": 1499.99, "image": "/static/images/gaming_desktop.jpg",
-         "category_id": 2}
-    ]
-
-    return templates.TemplateResponse("index.html", {"request": request, "email": email, "categories": categories, "products": products})
+    return templates.TemplateResponse("index.html", {"request": request, "email": email})
 
 @app.get("/profile", response_class=HTMLResponse)
 async def get_profile(request: Request):
@@ -242,15 +229,18 @@ async def signup(request: Request):
 
 
 @app.post("/register")
-async def register(email: str = Form(...), password: str = Form(...)):
+async def register(request: Request, email: str = Form(...), password: str = Form(...)):
     """Send a registration request to the auth service."""
     message = {"event": "register_request", "email": email, "password": password}
     response = await send_request_and_wait_for_response(message)
-    return response
+    if response.get("status") == "success":
+        return templates.TemplateResponse("signup.html", {"request": request, "success": 'Вы успешно зарегистрировались'})
+    else:
+        return templates.TemplateResponse("signup.html", {"request": request, "error": 'Пользователь уже существует'})
 
 
 @app.post("/login")
-async def login_action(email: str = Form(...), password: str = Form(...)):
+async def login_action(request: Request, email: str = Form(...), password: str = Form(...)):
     """Send a login request to the auth service."""
     print("DEBUG: main_service in post login")
     message = {"event": "login_request", "email": email, "password": password}
@@ -261,7 +251,7 @@ async def login_action(email: str = Form(...), password: str = Form(...)):
         response.set_cookie(key="access_token", value=token, httponly=True, secure=True)
         return response
     else:
-        return response
+        return templates.TemplateResponse("login.html", {"request": request, "error": 'Пользователя не существует'})
 
 
 @app.get("/logout")

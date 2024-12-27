@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from fastapi import HTTPException
 from db.models import Product, Category, Seller
 from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas, ProductBase, SellerSchemas
+from sqlalchemy.orm import selectinload
+
 
 # Получение всех продуктов с пагинацией
 async def get_all_products(db: AsyncSession, category: int = None, search: str = '', skip: int = 0, limit: int = 100):
@@ -13,16 +15,16 @@ async def get_all_products(db: AsyncSession, category: int = None, search: str =
             print("DEBUG CATALOG FUNCTION, get_all_products, search", search)
             result = await db.execute(
                 select(Product).filter(Product.category_id == category).filter(
-                    Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit))
+                    Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit).options(selectinload(Product.images)))
         else:
             result = await db.execute(
                 select(Product).filter(Product.category_id == category).order_by(Product.name).offset(skip).limit(
-                    limit))
+                    limit).options(selectinload(Product.images)))
     elif search != '':
         result = await db.execute(select(Product).filter(
-            Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit))
+            Product.name.ilike(f"%{search}%")).order_by(Product.name).offset(skip).limit(limit).options(selectinload(Product.images)))
     else:
-        result = await db.execute(select(Product).order_by(Product.name).offset(skip).limit(limit))
+        result = await db.execute(select(Product).order_by(Product.name).offset(skip).limit(limit).options(selectinload(Product.images)))
     products = result.scalars().all()
     products_list = [ProductBase.from_orm(product) for product in products]
 

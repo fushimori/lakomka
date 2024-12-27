@@ -1,3 +1,4 @@
+<!-- main_service/app/templates/profile.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,30 +46,11 @@
                 </div>
 
                 <div class="wishlist">
-                    <h2>Wishlist</h2>
-                    ${profileData.wishlist && profileData.wishlist.length > 0 ? `
-                        <ul>
-                            ${profileData.wishlist.map(item => `<li>Product ID: ${item.product_id}</li>`).join('')}
-                        </ul>
-                    ` : '<p>No items in wishlist.</p>'}
+                    <h2><a href="/wishlist">Wishlist</a></h2>
                 </div>
 
                 <div class="orders">
-                    <h2>Orders</h2>
-                    ${profileData.orders && profileData.orders.length > 0 ? `
-                        <ul>
-                            ${profileData.orders.map(order => `
-                                <li>
-                                    <p>Order ID: ${order.order_id} (Status: ${order.status})</p>
-                                    ${order.items && order.items.length > 0 ? `
-                                        <ul>
-                                            ${order.items.map(item => `<li>Product ID: ${item.product_id}, Quantity: ${item.quantity}</li>`).join('')}
-                                        </ul>
-                                    ` : '<p>No items in this order.</p>'}
-                                </li>
-                            `).join('')}
-                        </ul>
-                    ` : '<p>No orders found.</p>'}
+                    <h2><a href="/orders">Orders</a></h2>
                 </div>
             `;
         }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist</title>
+    <link rel="stylesheet" href="/static/wishlist.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const email = "{{ email }}";  // Получаем email из шаблона
+            fetchWishlistData(email);
+        });
+
+        async function fetchWishlistData(email) {
+            try {
+                // Запрос данных профиля пользователя, включая wishlist
+                const response = await fetch(`http://localhost:8001/profile?email=${email}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch wishlist data');
+                }
+                const profileData = await response.json();
+                
+                // Для каждого продукта в wishlist получаем название и изображение
+                const updatedWishlist = await Promise.all(profileData.wishlist.map(async (item) => {
+                    const productResponse = await fetch(`http://localhost:8003/api/get_product?id=${item.product_id}`);
+                    if (productResponse.ok) {
+                        const product = await productResponse.json();
+                        return {
+                            product_id: item.product_id,
+                            product_name: product.name,
+                            product_image: product.image_url || 'https://via.placeholder.com/400' // используем изображение по умолчанию, если его нет
+                        };
+                    } else {
+                        return item; // если не удалось получить продукт, возвращаем как есть
+                    }
+                }));
+
+                // Отображаем обновлённый wishlist с названиями и изображениями
+                renderWishlist(updatedWishlist);
+            } catch (error) {
+                console.error('Error fetching wishlist data:', error);
+                const wishlistContainer = document.getElementById('wishlistContainer');
+                wishlistContainer.innerHTML = `<p style="color: red;">Error loading wishlist data. Please try again later.</p>`;
+            }
+        }
+
+        function renderWishlist(wishlistData) {
+            const wishlistContainer = document.getElementById('wishlistContainer');
+            wishlistContainer.innerHTML = `
+                <header>
+                    <div>
+                        <h1>Lakomka</h1>
+                    </div>
+                    <div>
+                        <a href="/">Home</a>
+                        <a href="/logout">Log out</a>
+                    </div>
+                </header>
+                <div class="wishlist-info">
+                    <h1>Your Wishlist</h1>
+                    ${wishlistData && wishlistData.length > 0 ? `
+                        <ul>
+                            ${wishlistData.map(item => `
+                                <li>
+                                    <strong>Product Name:</strong> ${item.product_name}<br>
+                                    <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p>Your wishlist is empty.</p>'}
+                </div>
+            `;
+        }
+    </script>
+</head>
+<body>
+    <div id="wishlistContainer">
+        <!-- Здесь будут отображаться товары из wishlist -->
+    </div>
+</body>
+</html>

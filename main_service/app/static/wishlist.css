@@ -1,0 +1,94 @@
+/* Стили для списка желаемых товаров */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5faff;
+    color: #333;
+}
+
+header {
+    background-color: #007bff;
+    color: #fff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+header a:hover {
+    text-decoration: underline;
+}
+
+.wishlist-info {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+}
+
+.wishlist-info h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+.wishlist-info ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.wishlist-info li {
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Стили для изображений товаров в wishlist */
+.wishlist-info li img.product-image {
+    max-width: 100px;
+    height: auto;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.wishlist-info li .product-details {
+    display: flex;
+    align-items: center;
+}
+
+.wishlist-info li .product-details p {
+    margin: 0;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .wishlist-info h1 {
+        font-size: 20px;
+    }
+
+    .wishlist-info li {
+        font-size: 14px;
+    }
+
+    .wishlist-info li .product-details {
+        flex-direction: column;
+    }
+
+    .wishlist-info li img.product-image {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}

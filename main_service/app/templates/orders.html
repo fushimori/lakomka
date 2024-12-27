@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders</title>
+    <link rel="stylesheet" href="/static/orders.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const email = "{{ email }}";  // Получаем email из шаблона
+            fetchOrdersData(email);
+        });
+
+        async function fetchOrdersData(email) {
+            try {
+                // Запрос данных профиля пользователя, включая orders
+                const response = await fetch(`http://localhost:8001/profile?email=${email}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch orders data');
+                }
+                const profileData = await response.json();
+
+                // Для каждого товара в заказах получаем название и изображение
+                const updatedOrders = await Promise.all(profileData.orders.map(async (order) => {
+                    const updatedItems = await Promise.all(order.items.map(async (item) => {
+                        const productResponse = await fetch(`http://localhost:8003/api/get_product?id=${item.product_id}`);
+                        if (productResponse.ok) {
+                            const product = await productResponse.json();
+                            return {
+                                product_id: item.product_id,
+                                product_name: product.name,
+                                product_image: product.image_url || 'https://via.placeholder.com/400', // изображение по умолчанию
+                                quantity: item.quantity
+                            };
+                        } else {
+                            return item; // если не удалось получить товар, возвращаем как есть
+                        }
+                    }));
+
+                    return {
+                        ...order,
+                        items: updatedItems
+                    };
+                }));
+
+                // Отображаем обновлённые заказы с названиями и изображениями товаров
+                renderOrders(updatedOrders);
+            } catch (error) {
+                console.error('Error fetching orders data:', error);
+                const ordersContainer = document.getElementById('ordersContainer');
+                ordersContainer.innerHTML = `<p style="color: red;">Error loading orders data. Please try again later.</p>`;
+            }
+        }
+
+        function renderOrders(ordersData) {
+            const ordersContainer = document.getElementById('ordersContainer');
+            ordersContainer.innerHTML = `
+                <header>
+                    <div>
+                        <h1>Lakomka</h1>
+                    </div>
+                    <div>
+                        <a href="/">Home</a>
+                        <a href="/logout">Log out</a>
+                    </div>
+                </header>
+                <div class="orders-info">
+                    <h1>Your Orders</h1>
+                    ${ordersData && ordersData.length > 0 ? `
+                        <ul>
+                            ${ordersData.map(order => `
+                                <li>
+                                    <p>Order ID: ${order.order_id} (Status: ${order.status})</p>
+                                    ${order.items && order.items.length > 0 ? `
+                                        <ul>
+                                            ${order.items.map(item => `
+                                                <li>
+                                                    <strong>Product Name:</strong> ${item.product_name}<br>
+                                                    <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/><br>
+                                                    <strong>Quantity:</strong> ${item.quantity}
+                                                </li>
+                                            `).join('')}
+                                        </ul>
+                                    ` : '<p>No items in this order.</p>'}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p>You have no orders.</p>'}
+                </div>
+            `;
+        }
+    </script>
+</head>
+<body>
+    <div id="ordersContainer">
+        <!-- Здесь будут отображаться заказы -->
+    </div>
+</body>
+</html>

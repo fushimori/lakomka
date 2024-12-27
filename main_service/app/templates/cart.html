@@ -26,7 +26,17 @@
                 }
                 const cartItems = await cartResponse.json();
 
-                // Шаг 3: Отображаем товары на странице
+                // Шаг 3: Получаем информацию о каждом товаре по его ID
+                for (let item of cartItems) {
+                    const productResponse = await fetch(`http://localhost:8003/api/get_product?id=${item.product_id}`);
+                    if (productResponse.ok) {
+                        const product = await productResponse.json();
+                        item.product_name = product.name;
+                        item.product_image = product.image_url || 'https://via.placeholder.com/400'; // предполагается, что картинка товара доступна по полю image_url
+                    }
+                }
+
+                // Шаг 4: Отображаем товары на странице
                 renderCart(cartItems);
             } catch (error) {
                 console.error('Error:', error);
@@ -55,7 +65,8 @@
                         ${cartItems.length > 0 ? `
                             ${cartItems.map(item => `
                                 <div class="item-card">
-                                    <p><strong>Product ID:</strong> ${item.product_id}</p>
+                                    <p><strong>Product Name:</strong> ${item.product_name}</p>
+                                    <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
                                     <p><strong>Quantity:</strong> ${item.quantity}</p>
                                 </div>
                             `).join('')}

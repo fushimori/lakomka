@@ -176,6 +176,56 @@ async def get_cart(request: Request):
     # Передаем только email в шаблон
     return templates.TemplateResponse("cart.html", {"request": request, "email": email})
 
+@app.get("/wishlist", response_class=HTMLResponse)
+async def get_wishlist(request: Request):
+    """Рендерит корзину с данными, полученными через API."""
+    jwt_token = request.cookies.get("access_token")
+    
+    if not jwt_token:
+        print("DEBUG: No JWT token found in cookies")
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        # Декодируем payload
+        email = decode_jwt(jwt_token)
+        if not email:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token: email not found"
+            )
+        print(f"DEBUG: Decoded JWT token for email: {email}")
+    except HTTPException as e:
+        print(f"DEBUG: JWT decoding error: {e.detail}")
+        return RedirectResponse(url="/login", status_code=303)
+
+    # Передаем только email в шаблон
+    return templates.TemplateResponse("wishlist.html", {"request": request, "email": email})
+
+@app.get("/orders", response_class=HTMLResponse)
+async def get_orders(request: Request):
+    """Рендерит корзину с данными, полученными через API."""
+    jwt_token = request.cookies.get("access_token")
+    
+    if not jwt_token:
+        print("DEBUG: No JWT token found in cookies")
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        # Декодируем payload
+        email = decode_jwt(jwt_token)
+        if not email:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token: email not found"
+            )
+        print(f"DEBUG: Decoded JWT token for email: {email}")
+    except HTTPException as e:
+        print(f"DEBUG: JWT decoding error: {e.detail}")
+        return RedirectResponse(url="/login", status_code=303)
+
+    # Передаем только email в шаблон
+    return templates.TemplateResponse("orders.html", {"request": request, "email": email})
+
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})

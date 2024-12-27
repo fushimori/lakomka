@@ -63,7 +63,62 @@
                         `).join('') : '<p class="empty-message">Ваша корзина пуста</p>'}
                     </div>
                 </div>
+
+                <!-- Кнопка для создания заказа -->
+                ${cartItems.length > 0 ? `
+            <div class="order-button">
+                <button onclick="createOrder()">Make Order</button>
+            </div>
+        ` : ''}
             `;
+        }
+
+        async function deleteItem(productId, token) {
+            try {
+                const token = "{{ token }}";  // Ваш токен
+                console.log("JWT Token:", token);
+                const response = await fetch(`http://localhost:8004/cart/delete?product_id=${productId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to delete item');
+                }
+                // После успешного удаления обновляем корзину
+                location.reload(); // Перезагружаем страницу, чтобы обновить список товаров
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert('Failed to delete item');
+            }
+        }
+
+        async function createOrder() {
+            try {
+                const token = "{{ token }}";  // Ваш токен
+                console.log("JWT Token create token:", token);
+                // Шаг 1: Отправляем запрос на создание заказа
+                const createOrderResponse = await fetch(`http://localhost:8004/cart/createorder`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer {{ token }}`
+                    }
+                });
+                if (!createOrderResponse.ok) {
+                    throw new Error('Failed to create order');
+                }
+
+                const orderData = await createOrderResponse.json();
+                console.log('Order created successfully:', orderData);
+
+                // Шаг 2: Обновляем страницу или выполняем другие действия
+                location.reload(); // Перезагружаем страницу, чтобы отобразить изменения
+            } catch (error) {
+                console.error('Error creating order:', error);
+                alert('Failed to create order');
+            }
         }
     </script>
 </head>

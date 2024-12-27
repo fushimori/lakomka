@@ -58,7 +58,7 @@ async def get_user_with_details(db: AsyncSession, email: str):
         "id": user.id,
         "email": user.email,
         "is_active": user.is_active,
-        "loyalty_card_number": user.loyalty_card_number,
+        # "loyalty_card_number": user.loyalty_card_number,
         "wishlist": [
             {"product_id": item.product_id} for item in wishlist
         ],
@@ -89,7 +89,7 @@ async def update_user(db: AsyncSession, user_id: int, user_data: UserBase):
     db_user.email = user_data.email
     db_user.hashed_password = user_data.hashed_password
     db_user.is_active = user_data.is_active
-    db_user.loyalty_card_number = user_data.loyalty_card_number
+    # db_user.loyalty_card_number = user_data.loyalty_card_number
     await db.commit()
     await db.refresh(db_user)
     return db_user

@@ -1,16 +1,32 @@
 # auth_service/app/main.py
 import json
 import asyncio
-from fastapi import Depends, HTTPException, status, FastAPI
+from fastapi import Depends, HTTPException, status, FastAPI, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from auth_utils import hash_password, verify_password, create_access_token
 from db.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.functions import create_user, get_user_with_details, get_user_by_email
+from db.functions import *
 from db.init_db import init_db
 import aio_pika
+from db.schemas import UserBase, OrderItemBase, OrderBase
+import jwt
 from fastapi.security import OAuth2PasswordBearer
 from jwt import DecodeError, ExpiredSignatureError, decode
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("id")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # RabbitMQ Host
 RABBITMQ_HOST = "rabbitmq"
@@ -19,7 +35,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000"],  # Укажите адрес фронтенда
+    allow_origins=["*"],  # Укажите адрес фронтенда
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +71,32 @@ async def get_profile(email: str, db: AsyncSession = Depends(get_db)):
     
     print(f"DEBUG: Profile data for user {email}: {user_details}")
     return user_details
+
+@app.post("/create_order")
+async def create_user_order(request: Request, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    print("DEBUG AUTH SERVICE create_user_order" )
+    try:
+        # Получаем токен и данные корзины из запроса
+        if token is None:
+            raise HTTPException(status_code=400, detail="Authorization token is missing")
+
+        user_id = verify_token(token)
+        print("DEBUG AUTH SERVICE create_user_order, user_id", user_id)
+
+        cart_data = await request.json()  # Получаем данные корзины из тела запроса
+        print("DEBUG AUTH SERVICE create_user_order, cart_data", cart_data)
+        # Создаем заказ в базе данных
+        order_data = OrderBase(status="pending")  # Например, статус "pending" для нового заказа
+        order_items = [OrderItemBase(product_id=item["product_id"], quantity=item["quantity"])
+                       for item in cart_data["cart_items"]]
+
+        new_order = await create_order(db, user_id, order_data, order_items)
+
+        # Возвращаем id созданного заказа
+        return {"order_id": new_order.id}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/")

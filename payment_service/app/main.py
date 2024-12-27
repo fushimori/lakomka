@@ -35,8 +35,9 @@ async def mock_payment_processing(transaction: TransactionCreate) -> bool:
     Мок-функция для имитации процесса оплаты.
     Возвращает True если оплата успешна, False если неудачна.
     """
-    time.sleep(2)  # Имитация задержки при обработке транзакции
-    return random.choice([True, False])  # Случайный успех или неудача
+    # time.sleep(2)  # Имитация задержки при обработке транзакции
+    # return random.choice([True, False])  # Случайный успех или неудача
+    return True
 
 @app.post("/transactions/", response_model=TransactionResponse)
 async def create_transaction_endpoint(

@@ -144,7 +144,7 @@ async def handle_login(db: AsyncSession, payload: dict):
 
     print("DEBUG: auth_service handle_login user: ", user)
     if user and verify_password(password, user.hashed_password):
-        token = create_access_token({"sub": email})
+        token = create_access_token({"sub": email, "id": user.id})
         return {
             "status": "success",
             "message": "Login successful",

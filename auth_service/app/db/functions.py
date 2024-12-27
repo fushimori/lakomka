@@ -25,44 +25,48 @@ async def get_user_with_details(db: AsyncSession, email: str):
     """
     Получить информацию о пользователе, включая список желаемого и заказы, в формате JSON.
     """
-    # Запрос для получения пользователя с его связями
-    result = await db.execute(
-        select(User)
-        .filter(User.email == email)
-        .options(
-            selectinload(User.wishlist),
-            selectinload(User.orders).selectinload(Order.order_items)
-        )
-    )
-    user = result.scalar_one_or_none()
+    # Запрос для получения пользователя
+    user = await get_user_by_email(db, email)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Преобразование данных в JSON
+    # Запрос для получения списка желаемого пользователя
+    wishlist_result = await db.execute(select(Wishlist).filter(Wishlist.user_id == user.id))
+    wishlist = wishlist_result.scalars().all()
+
+    # Запрос для получения заказов пользователя
+    orders_result = await db.execute(select(Order).filter(Order.user_id == user.id))
+    orders = orders_result.scalars().all()
+
+    # Для каждого заказа получаем его элементы
+    orders_with_items = []
+    for order in orders:
+        order_items_result = await db.execute(select(OrderItem).filter(OrderItem.order_id == order.id))
+        order_items = order_items_result.scalars().all()
+        orders_with_items.append({
+            "order_id": order.id,
+            "status": order.status,
+            "items": [
+                {"product_id": item.product_id, "quantity": item.quantity}
+                for item in order_items
+            ]
+        })
+
+    # Формируем итоговый JSON
     user_data = {
         "id": user.id,
         "email": user.email,
         "is_active": user.is_active,
         "loyalty_card_number": user.loyalty_card_number,
         "wishlist": [
-            {"product_id": item.product_id} for item in user.wishlist
+            {"product_id": item.product_id} for item in wishlist
         ],
-        "orders": [
-            {
-                "order_id": order.id,
-                "status": order.status,
-                "items": [
-                    {"product_id": item.product_id, "quantity": item.quantity}
-                    for item in order.order_items
-                ]
-            }
-            for order in user.orders
-        ]
+        "orders": orders_with_items
     }
 
     return user_data
-    
+
 # Функция для создания нового пользователя
 async def create_user(db: AsyncSession, user_data: dict): # user_data: UserBase
     print("DEBUG: auth function create_user, user_data:", user_data)

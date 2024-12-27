@@ -2,6 +2,7 @@
 import json
 import asyncio
 from fastapi import Depends, HTTPException, status, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from auth_utils import hash_password, verify_password, create_access_token
 from db.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,11 +17,25 @@ RABBITMQ_HOST = "rabbitmq"
 # FastAPI Application
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8000"],  # Укажите адрес фронтенда
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Application lifespan for initializing the database
 @app.on_event("startup")
 async def app_startup():
     await init_db()
     asyncio.create_task(consume_messages())
+
+
+@app.get("/get_user_id")
+async def get_user_id(email: str, db: AsyncSession = Depends(get_db)):
+    user = await get_user_by_email(db, email)
+    return {"user_id": user.id}
 
 @app.get("/profile")
 async def get_profile(email: str, db: AsyncSession = Depends(get_db)):

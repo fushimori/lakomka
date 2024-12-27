@@ -7,8 +7,6 @@ from db.database import get_db
 from db.schemas import (
     TransactionCreate,
     TransactionResponse,
-    PaymentMethodResponse,
-    PaymentMethodCreate,
     RefundCreate,
     RefundResponse,
 )
@@ -17,8 +15,6 @@ from db.functions import (
     create_transaction,
     get_transaction_by_id,
     update_transaction_status,
-    get_all_payment_methods,
-    add_payment_method,
     create_refund,
     update_refund_status,
     get_refunds_by_transaction_id,
@@ -93,22 +89,6 @@ async def update_transaction_status_endpoint(
     """
     return await update_transaction_status(db, transaction_id, status)
 
-@app.get("/payment_methods/", response_model=List[PaymentMethodResponse])
-async def get_payment_methods_endpoint(db: AsyncSession = Depends(get_db)):
-    """
-    Получение всех доступных методов оплаты.
-    """
-    return await get_all_payment_methods(db)
-
-@app.post("/payment_methods/", response_model=PaymentMethodResponse)
-async def add_payment_method_endpoint(
-    payment_method: PaymentMethodCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Добавление нового метода оплаты.
-    """
-    return await add_payment_method(db, payment_method.method_name)
 
 @app.post("/refunds/", response_model=RefundResponse)
 async def create_refund_endpoint(

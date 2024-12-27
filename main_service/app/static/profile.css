@@ -53,18 +53,40 @@ header a:hover {
     margin-bottom: 10px;
 }
 
-/* Стили для кнопок и ссылок */
-.button {
+/* Стили для кнопок "Wishlist" и "Orders" */
+.wishlist-button, .orders-button {
     display: inline-block;
-    padding: 10px 15px;
-    background-color: #007bff;
+    padding: 12px 25px;
     color: #fff;
     text-decoration: none;
     border-radius: 5px;
     cursor: pointer;
     border: none;
+    font-size: 18px;
+    margin: 10px 15px;
+    text-align: center;
 }
 
-.button:hover {
-    background-color: #0056b3;
+.wishlist-button {
+    background-color: #0069d9; /* Темный синий для "Wishlist" */
+}
+
+.wishlist-button:hover {
+    background-color: #0056b3; /* Более темный синий при наведении */
+}
+
+.orders-button {
+    background-color: #007bff; /* Основной синий для "Orders" */
+}
+
+.orders-button:hover {
+    background-color: #0056b3; /* Темно-синий при наведении */
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .button, .wishlist-button, .orders-button {
+        padding: 10px 18px;
+        font-size: 16px;
+    }
 }

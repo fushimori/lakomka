@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import NoResultFound
 from fastapi import HTTPException
-from db.models import Transaction, PaymentMethod, Refund, TransactionStatus
+from db.models import Transaction, Refund, TransactionStatus
 
 # Получение транзакции по ID
 async def get_transaction_by_id(db: AsyncSession, transaction_id: int):
@@ -36,22 +36,6 @@ async def update_transaction_status(db: AsyncSession, transaction_id: int, statu
     await db.refresh(transaction)
     return transaction
 
-# Получение всех доступных методов оплаты
-async def get_all_payment_methods(db: AsyncSession):
-    result = await db.execute(select(PaymentMethod))
-    return result.scalars().all()
-
-# Добавление нового метода оплаты
-async def add_payment_method(db: AsyncSession, method_name: str):
-    existing_method = await db.execute(select(PaymentMethod).filter(PaymentMethod.method_name == method_name))
-    if existing_method.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Payment method already exists")
-    
-    payment_method = PaymentMethod(method_name=method_name)
-    db.add(payment_method)
-    await db.commit()
-    await db.refresh(payment_method)
-    return payment_method
 
 # Создание запроса на возврат
 async def create_refund(db: AsyncSession, transaction_id: int, amount: float):

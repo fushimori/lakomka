@@ -1,10 +1,9 @@
-<!-- main_service/app/templates/profile.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
+    <title>Lakomka</title>
     <link rel="stylesheet" href="/static/profile.css">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -16,14 +15,13 @@
             try {
                 const response = await fetch(`http://localhost:8001/profile?email=${email}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch profile data');
+                    throw new Error('Не удалось загрузить данные профиля');
                 }
                 const profileData = await response.json();
                 renderProfile(profileData);
             } catch (error) {
-                console.error('Error fetching profile data:', error);
-                const profileContainer = document.getElementById('profileContainer');
-                profileContainer.innerHTML = `<p style="color: red;">Error loading profile data. Please try again later.</p>`;
+                console.error('Ошибка при загрузке данных профиля:', error);
+                document.getElementById('profileContainer').innerHTML = `<p style="color: red;">Ошибка загрузки данных профиля. Попробуйте снова позже.</p>`;
             }
         }
 
@@ -31,31 +29,26 @@
             const profileContainer = document.getElementById('profileContainer');
             profileContainer.innerHTML = `
                 <header>
+                    <div><h1>Lakomka</h1></div>
                     <div>
-                        <h1>Lakomka</h1>
-                    </div>
-                    <div>
-                        <a href="/">Home</a>
-                        <a href="/logout">Log out</a>
+                        <a href="/">Главная</a>
+                        <a href="/logout">Выйти</a>
                     </div>
                 </header>
                 <div class="profile-info">
-                    <h1>Profile for email: ${profileData.email}</h1>
-                    <p>Status: ${profileData.is_active ? 'Active' : 'Inactive'}</p>
-                    <p>Loyalty Card Number: ${profileData.loyalty_card_number || 'Not available'}</p>
+                    <h1>Профиль для: ${profileData.email}</h1>
+                    <p>Статус: ${profileData.is_active ? 'Активен' : 'Неактивен'}</p>
+                    <p>Номер карты лояльности: ${profileData.loyalty_card_number || 'Не доступно'}</p>
                 </div>
-
                 <div class="actions">
-                    <h2><a href="/wishlist" class="wishlist-button">Wishlist</a></h2>
-                    <h2><a href="/orders" class="orders-button">Orders</a></h2>
+                    <h2><a href="/wishlist" class="wishlist-button">Список желаемого</a></h2>
+                    <h2><a href="/orders" class="orders-button">Заказы</a></h2>
                 </div>
             `;
         }
     </script>
 </head>
 <body>
-    <div id="profileContainer">
-        <!-- Здесь будут отображаться данные профиля -->
-    </div>
+    <div id="profileContainer"></div>
 </body>
 </html>

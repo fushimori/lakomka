@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +16,7 @@
                 // Запрос данных профиля пользователя, включая wishlist
                 const response = await fetch(`http://localhost:8001/profile?email=${email}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch wishlist data');
+                    throw new Error('Не удалось загрузить данные wishlist');
                 }
                 const profileData = await response.json();
                 
@@ -28,7 +28,7 @@
                         return {
                             product_id: item.product_id,
                             product_name: product.name,
-                            product_image: product.image_url || 'https://via.placeholder.com/400' // используем изображение по умолчанию, если его нет
+                            product_image: product.image_url || 'https://via.placeholder.com/400' // изображение по умолчанию, если его нет
                         };
                     } else {
                         return item; // если не удалось получить продукт, возвращаем как есть
@@ -38,9 +38,9 @@
                 // Отображаем обновлённый wishlist с названиями и изображениями
                 renderWishlist(updatedWishlist);
             } catch (error) {
-                console.error('Error fetching wishlist data:', error);
+                console.error('Ошибка при загрузке данных wishlist:', error);
                 const wishlistContainer = document.getElementById('wishlistContainer');
-                wishlistContainer.innerHTML = `<p style="color: red;">Error loading wishlist data. Please try again later.</p>`;
+                wishlistContainer.innerHTML = `<p style="color: red;">Ошибка загрузки данных wishlist. Попробуйте снова позже.</p>`;
             }
         }
 
@@ -48,34 +48,30 @@
             const wishlistContainer = document.getElementById('wishlistContainer');
             wishlistContainer.innerHTML = `
                 <header>
+                    <div><h1>Lakomka</h1></div>
                     <div>
-                        <h1>Lakomka</h1>
-                    </div>
-                    <div>
-                        <a href="/">Home</a>
-                        <a href="/logout">Log out</a>
+                        <a href="/">Главная</a>
+                        <a href="/logout">Выйти</a>
                     </div>
                 </header>
                 <div class="wishlist-info">
-                    <h1>Your Wishlist</h1>
-                    ${wishlistData && wishlistData.length > 0 ? `
+                    <h1>Ваш список желаемого</h1>
+                    ${wishlistData && wishlistData.length > 0 ? ` 
                         <ul>
                             ${wishlistData.map(item => `
                                 <li>
-                                    <strong>Product Name:</strong> ${item.product_name}<br>
                                     <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
+                                    <strong>${item.product_name}</strong>
                                 </li>
                             `).join('')}
                         </ul>
-                    ` : '<p>Your wishlist is empty.</p>'}
+                    ` : '<p>Ваш список желаемого пуст.</p>'}
                 </div>
             `;
         }
     </script>
 </head>
 <body>
-    <div id="wishlistContainer">
-        <!-- Здесь будут отображаться товары из wishlist -->
-    </div>
+    <div id="wishlistContainer"></div>
 </body>
 </html>

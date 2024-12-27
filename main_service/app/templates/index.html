@@ -1,4 +1,3 @@
-<!-- main_service/app/templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,38 +13,31 @@
         </div>
         <div>
             {% if email %}
-<!--            <a href="/profile/">{{ email }}</a> -->
-            <a href="/profile">Profile</a>
-            <a href="/logout">Log out</a>
+            <a href="/profile">Профиль</a>
+            <a href="/logout">Выйти</a>
             {% else %}
-                <a href="/login">Login</a>
-                <a href="/signup">Sign up</a>
+                <a href="/login">Вход</a>
+                <a href="/signup">Регистрация</a>
             {% endif %}
-            <a href="/cart">Cart</a>
+            <a href="/cart">Корзина</a>
         </div>
     </header>
     <div class="container">
         <div class="search-bar">
-            <input type="text" id="search" placeholder="Search for products...">
-            <button onclick="searchProducts()">Search</button>
+            <input type="text" id="search" placeholder="Поиск товаров...">
+            <button onclick="searchProducts()">Искать</button>
         </div>
         <div class="filters">
             <label for="categories">Выберите категорию:</label>
             <select id="categories" onchange="filterProducts()">
-                 <option value="">Все товары</option>
-<!--                {% for category in categories %}-->
-<!--                    <option value="{{ category.id }}">{{ category.name }}</option>-->
-<!--                {% endfor %}-->
+                <option value="">Все товары</option>
             </select>
         </div>
-        <div class="product-grid" id="productGrid">
-
-        </div>
+        <div class="product-grid" id="productGrid"></div>
     </div>
 
     <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Load categories and products from backend
     loadCategories();
     loadProducts();
 });
@@ -54,10 +46,7 @@ async function loadCategories() {
     try {
         const response = await fetch('http://localhost:8003/api/categories');
         const categories = await response.json();
-        console.log('Categories loaded:', categories);
         const categoriesSelect = document.getElementById('categories');
-
-        // Adding categories to the dropdown list
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.id;
@@ -65,73 +54,52 @@ async function loadCategories() {
             categoriesSelect.appendChild(option);
         });
     } catch (error) {
-        console.error('Failed to load categories:', error);
+        console.error('Ошибка загрузки категорий:', error);
     }
 }
 
 async function loadProducts(categoryId = null, searchQuery = '') {
     try {
-        // Construct the URL with the category filter if provided
         let url = 'http://localhost:8003/api/products';
         const queryParams = [];
-        if (searchQuery) {
-            queryParams.push(`search=${searchQuery}`);
-        }
-        else {
-            queryParams.push(`search=`);
-        }
-        if (categoryId) {
-            queryParams.push(`category=${categoryId}`);
-        }
-        if (queryParams.length > 0) {
-            url += '?' + queryParams.join('&');
-        }
+        if (searchQuery) queryParams.push(`search=${searchQuery}`);
+        if (categoryId) queryParams.push(`category=${categoryId}`);
+        if (queryParams.length) url += '?' + queryParams.join('&');
+
         const response = await fetch(url);
         const products = await response.json();
         const productGrid = document.getElementById('productGrid');
-        productGrid.innerHTML = '';  // Clear the existing products
+        productGrid.innerHTML = '';
 
-        // Add products to the grid
         products.forEach(product => {
             const productElement = document.createElement('div');
             productElement.className = 'product';
-
-            // Assuming each product has an 'image' property
             productElement.innerHTML = `
                 <img src="${product.image || 'default_image.jpg'}" alt="${product.name}">
                 <h3>${product.name}</h3>
-                <p>$${product.price}</p>
+                <p>${product.price} ₽</p>
             `;
-
-            // Добавляем обработчик события click для перехода на страницу товара
             productElement.addEventListener('click', () => {
                 window.location.href = `product?id=${product.id}`;
             });
-
             productGrid.appendChild(productElement);
         });
     } catch (error) {
-        console.error('Failed to load products:', error);
+        console.error('Ошибка загрузки товаров:', error);
     }
 }
 
 function filterProducts() {
     const categoryId = document.getElementById('categories').value;
     const searchQuery = document.getElementById('search').value;
-    console.log('Selected category:', categoryId);
-    console.log('Search query:', searchQuery);
-    // Load products based on the selected category
-    loadProducts(categoryId, searchQuery);
-}
-function searchProducts() {
-    const categoryId = document.getElementById('categories').value;
-    const searchQuery = document.getElementById('search').value;
-    console.log('Selected category:', categoryId);
-    console.log('Search query:', searchQuery);
-    // Load products based on the selected category
     loadProducts(categoryId, searchQuery);
 }
 
+function searchProducts() {
+    const searchQuery = document.getElementById('search').value;
+    const categoryId = document.getElementById('categories').value;
+    loadProducts(categoryId, searchQuery);
+}
 </script>
 </body>
 </html>

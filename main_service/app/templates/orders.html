@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orders</title>
+    <title>Заказы</title>
     <link rel="stylesheet" href="/static/orders.css">
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -13,10 +13,10 @@
 
         async function fetchOrdersData(email) {
             try {
-                // Запрос данных профиля пользователя, включая orders
+                // Запрос данных профиля пользователя, включая заказы
                 const response = await fetch(`http://localhost:8001/profile?email=${email}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch orders data');
+                    throw new Error('Не удалось загрузить данные заказов');
                 }
                 const profileData = await response.json();
 
@@ -46,9 +46,9 @@
                 // Отображаем обновлённые заказы с названиями и изображениями товаров
                 renderOrders(updatedOrders);
             } catch (error) {
-                console.error('Error fetching orders data:', error);
+                console.error('Ошибка при загрузке данных заказов:', error);
                 const ordersContainer = document.getElementById('ordersContainer');
-                ordersContainer.innerHTML = `<p style="color: red;">Error loading orders data. Please try again later.</p>`;
+                ordersContainer.innerHTML = `<p style="color: red;">Ошибка загрузки данных заказов. Попробуйте снова позже.</p>`;
             }
         }
 
@@ -56,44 +56,44 @@
             const ordersContainer = document.getElementById('ordersContainer');
             ordersContainer.innerHTML = `
                 <header>
+                    <div><h1>Lakomka</h1></div>
                     <div>
-                        <h1>Lakomka</h1>
-                    </div>
-                    <div>
-                        <a href="/">Home</a>
-                        <a href="/logout">Log out</a>
+                        <a href="/">Главная</a>
+                        <a href="/logout">Выйти</a>
                     </div>
                 </header>
                 <div class="orders-info">
-                    <h1>Your Orders</h1>
-                    ${ordersData && ordersData.length > 0 ? `
+                    <h1>Ваши Заказы</h1>
+                    ${ordersData && ordersData.length > 0 ? ` 
                         <ul>
                             ${ordersData.map(order => `
                                 <li>
-                                    <p>Order ID: ${order.order_id} (Status: ${order.status})</p>
+                                    <p>Заказ №${order.order_id} (Статус: ${order.status})</p>
                                     ${order.items && order.items.length > 0 ? `
                                         <ul>
                                             ${order.items.map(item => `
                                                 <li>
-                                                    <strong>Product Name:</strong> ${item.product_name}<br>
-                                                    <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/><br>
-                                                    <strong>Quantity:</strong> ${item.quantity}
+                                                    <div class="product-details">
+                                                        <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
+                                                        <div>
+                                                            <strong>Название:</strong> ${item.product_name}<br>
+                                                            <strong>Количество:</strong> ${item.quantity}
+                                                        </div>
+                                                    </div>
                                                 </li>
                                             `).join('')}
                                         </ul>
-                                    ` : '<p>No items in this order.</p>'}
+                                    ` : '<p>Нет товаров в этом заказе.</p>'}
                                 </li>
                             `).join('')}
                         </ul>
-                    ` : '<p>You have no orders.</p>'}
+                    ` : '<p>У вас нет заказов.</p>'}
                 </div>
             `;
         }
     </script>
 </head>
 <body>
-    <div id="ordersContainer">
-        <!-- Здесь будут отображаться заказы -->
-    </div>
+    <div id="ordersContainer"></div>
 </body>
 </html>

@@ -1,45 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cart</title>
+    <title>Корзина</title>
     <link rel="stylesheet" href="/static/cart.css">
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const email = "{{ email }}"; // Получаем email из шаблона
+            const email = "{{ email }}"; // Email из шаблона
 
             try {
-                // Шаг 1: Получаем user_id по email
-                console.log("DEBUG: Email is:", email);
+                // Получение ID пользователя
                 const userIdResponse = await fetch(`http://localhost:8001/get_user_id?email=${email}`);
-                if (!userIdResponse.ok) {
-                    throw new Error('Failed to fetch user ID');
-                }
+                if (!userIdResponse.ok) throw new Error('Не удалось получить ID пользователя');
                 const { user_id } = await userIdResponse.json();
-                console.log("DEBUG: User ID is:", user_id);
 
-                // Шаг 2: Получаем товары корзины по user_id
+                // Получение товаров корзины
                 const cartResponse = await fetch(`http://localhost:8004/cart/${user_id}`);
-                if (!cartResponse.ok) {
-                    throw new Error('Failed to fetch cart items');
-                }
+                if (!cartResponse.ok) throw new Error('Не удалось получить товары корзины');
                 const cartItems = await cartResponse.json();
 
-                // Шаг 3: Получаем информацию о каждом товаре по его ID
-                for (let item of cartItems) {
+                // Информация о каждом товаре
+                for (const item of cartItems) {
                     const productResponse = await fetch(`http://localhost:8003/api/get_product?id=${item.product_id}`);
                     if (productResponse.ok) {
                         const product = await productResponse.json();
                         item.product_name = product.name;
-                        item.product_image = product.image_url || 'https://via.placeholder.com/400'; // предполагается, что картинка товара доступна по полю image_url
+                        item.product_image = product.image_url || 'https://via.placeholder.com/400';
                     }
                 }
 
-                // Шаг 4: Отображаем товары на странице
                 renderCart(cartItems);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Ошибка:', error);
                 renderCart([]);
             }
         });
@@ -52,25 +45,22 @@
                         <h1>Lakomka</h1>
                     </div>
                     <div>
-                        <a href="/">Home</a>
-                        <a href="/logout">Log out</a>
+                        <a href="/">Главная</a>
+                        <a href="/logout">Выйти</a>
                     </div>
                 </header>
-                <div class="cart-info">
-                    <h1>Your Cart</h1>
-                </div>
-
-                <div class="cart-items">
+                <div class="container">
+                    <div class="cart-info">
+                        <h1>Ваша корзина</h1>
+                    </div>
                     <div class="items-grid">
-                        ${cartItems.length > 0 ? `
-                            ${cartItems.map(item => `
-                                <div class="item-card">
-                                    <p><strong>Product Name:</strong> ${item.product_name}</p>
-                                    <img src="${item.product_image}" alt="${item.product_name}" class="product-image"/>
-                                    <p><strong>Quantity:</strong> ${item.quantity}</p>
-                                </div>
-                            `).join('')}
-                        ` : '<p class="empty-message">EMPTY</p>'}
+                        ${cartItems.length > 0 ? cartItems.map(item => `
+                            <div class="item-card">
+                                <img src="${item.product_image}" alt="${item.product_name}">
+                                <p><strong>Название:</strong> ${item.product_name}</p>
+                                <p><strong>Количество:</strong> ${item.quantity}</p>
+                            </div>
+                        `).join('') : '<p class="empty-message">Ваша корзина пуста</p>'}
                     </div>
                 </div>
             `;
@@ -78,8 +68,6 @@
     </script>
 </head>
 <body>
-    <div id="cartContainer">
-        <!-- Здесь будут отображаться данные корзины -->
-    </div>
+    <div id="cartContainer"></div>
 </body>
 </html>

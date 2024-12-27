@@ -30,8 +30,7 @@
                 renderCart(cartItems);
             } catch (error) {
                 console.error('Error:', error);
-                const cartContainer = document.getElementById('cartContainer');
-                cartContainer.innerHTML = `<p style="color: red;">Error loading cart data. Please try again later.</p>`;
+                renderCart([]);
             }
         });
 
@@ -60,7 +59,7 @@
                                     <p><strong>Quantity:</strong> ${item.quantity}</p>
                                 </div>
                             `).join('')}
-                        ` : '<p>Your cart is empty.</p>'}
+                        ` : '<p class="empty-message">EMPTY</p>'}
                     </div>
                 </div>
             `;

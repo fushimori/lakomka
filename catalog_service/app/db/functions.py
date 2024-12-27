@@ -2,8 +2,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
-from db.models import Product, Category
-from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas, ProductBase
+from db.models import Product, Category, Seller
+from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas, ProductBase, SellerSchemas
 
 # Получение всех продуктов с пагинацией
 async def get_all_products(db: AsyncSession, category: int = None, search: str = '', skip: int = 0, limit: int = 100):
@@ -33,7 +33,12 @@ async def get_all_products(db: AsyncSession, category: int = None, search: str =
 # Получение одного продукта
 async def get_product_by_id(db: AsyncSession, product_id: int):
     result = await db.execute(select(Product).filter(Product.id == product_id))
-    return result.scalar_one_or_none()
+    product = result.scalar_one_or_none()
+    products_list = ProductBase.from_orm(product)
+
+    products_dict = products_list.dict()
+    print("DEBUG CATALOG FUNCTION, get_product_by_id, products_dict", products_dict)
+    return products_dict
 
 async def get_all_categories(db: AsyncSession):
     result = await db.execute(select(Category))
@@ -45,6 +50,15 @@ async def get_all_categories(db: AsyncSession):
     categories_dict = [category.dict() for category in categories_list]
 
     return categories_dict
+
+async def get_seller_by_id(db: AsyncSession, seller_id: int):
+    result = await db.execute(select(Seller).filter(Seller.id == seller_id))
+    seller = result.scalar_one_or_none()
+    seller_id_list = SellerSchemas.from_orm(seller)
+
+    seller_id_dict = seller_id_list.dict()
+    print("DEBUG CATALOG FUNCTION, get_product_by_id, products_dict", seller_id_dict)
+    return seller_id_dict
 
 # Создание нового товара
 async def create_product(db: AsyncSession, name: str, description: str, price: float, stock: int, category_id: int, seller_id: int):

@@ -13,6 +13,7 @@ class ProductImageBase(BaseModel):
 
 # Схема для товара (Product)
 class ProductBase(BaseModel):
+    id: int
     name: str
     description: Optional[str] = None
     price: float
@@ -49,13 +50,13 @@ class CategorySchemas(BaseModel):
         from_attributes = True
 
 # Схема для продавца (Seller)
-class Seller(BaseModel):
+class SellerSchemas(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Схема для отзыва о товаре (Review)
 class Review(BaseModel):

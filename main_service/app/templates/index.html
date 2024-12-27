@@ -39,13 +39,7 @@
             </select>
         </div>
         <div class="product-grid" id="productGrid">
-            {% for product in products %}
-                <div class="product">
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
-                    <h3>{{ product.name }}</h3>
-                    <p>${{ product.price }}</p>
-                </div>
-            {% endfor %}
+
         </div>
     </div>
 
@@ -108,6 +102,11 @@ async function loadProducts(categoryId = null, searchQuery = '') {
                 <h3>${product.name}</h3>
                 <p>$${product.price}</p>
             `;
+
+            // Добавляем обработчик события click для перехода на страницу товара
+            productElement.addEventListener('click', () => {
+                window.location.href = `product?id=${product.id}`;
+            });
 
             productGrid.appendChild(productElement);
         });

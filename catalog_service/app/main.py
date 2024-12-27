@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
 from db.schemas import ProductBase, Product as ProductSchema, CategorySchemas  # Импортируем Pydantic модель
 from typing import List, AsyncGenerator
-from db.functions import get_all_products, get_product_by_id, get_all_categories, create_product, update_product, delete_product
+from db.functions import *
 from db.init_db import init_db
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,9 +28,9 @@ app.add_middleware(
 @app.get("/api/products")  # Указываем Pydantic модель для списка продуктов
 async def read_products(searchquery: str = Query(default='', alias="search"), category: int = None, db: AsyncSession = Depends(get_db)):
     products = await get_all_products(db, category, searchquery)
-    print("DEBUG CATALOG SERVICE: category: ", category)
-    print("DEBUG CATALOG SERVICE: searchquery: ", searchquery)
-    print("DEBUG CATALOG SERVICE: products: ", products)
+    print("DEBUG CATALOG SERVICE read_products: category: ", category)
+    print("DEBUG CATALOG SERVICE read_products: searchquery: ", searchquery)
+    print("DEBUG CATALOG SERVICE read_products: products: ", products)
     return products
 
 
@@ -40,6 +40,20 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     # print("DEBUG CATALOG SERVICE: categories: ", categories)
     return categories
 
+@app.get("/api/get_product")  # Указываем Pydantic модель для списка продуктов
+async def get_product(id: int = None, db: AsyncSession = Depends(get_db)):
+    print("DEBUG CATALOG SERVICE get_product: productid:", id)
+    products = await get_product_by_id(db, id)
+    print("DEBUG CATALOG SERVICE get_product: products: ", products)
+    return products
+
+
+@app.get("/api/get_seller")  # Указываем Pydantic модель для списка продуктов
+async def get_seller(id: int = None, db: AsyncSession = Depends(get_db)):
+    print("DEBUG CATALOG SERVICE get_seller: seller_id:", id)
+    seller = await get_seller_by_id(db, id)
+    print("DEBUG CATALOG SERVICE get_seller: products: ", seller)
+    return seller
 
 
 @app.get("/products/{product_id}", response_model=ProductSchema)  # Указываем Pydantic модель для одного товара

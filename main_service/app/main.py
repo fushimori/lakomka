@@ -180,6 +180,10 @@ async def get_cart(request: Request):
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/product", response_class=HTMLResponse)
+async def product(request: Request):
+    return templates.TemplateResponse("product.html", {"request": request})
+
 
 @app.get("/signup", response_class=HTMLResponse)
 async def signup(request: Request):
